@@ -6,6 +6,7 @@ import { Home, SearchScreen } from './Home'
 import { Categories, SubCats, ProductList, Filters } from './Catalog'
 import { Favorites } from './Favorites'
 import { ProductPage } from './ProductPage'
+import { SellerChat, SellerChats } from './SellerChat'
 import { Cart, OrderOk } from './Cart'
 import { Profile, EditProfile, Addresses, AddressForm, Orders, OrderDetail, Reviews, Campaigns, News, Assistant, Country, Support, Settings, Doc } from './Profile'
 
@@ -22,6 +23,8 @@ function render(r: Route): ReactNode {
     case 'list': return <ProductList kind={p.kind} id={p.id} title={p.title} f0={p.f0} />
     case 'filters': return <Filters f={p.f} onApply={p.onApply} from={p.from} />
     case 'product': return <ProductPage id={p.id} key={p.id} />
+    case 'sellerChat': return <SellerChat seller={p.seller} productId={p.productId} key={p.seller + (p.productId || '')} />
+    case 'sellerChats': return <SellerChats />
     case 'orderOk': return <OrderOk id={p.id} />
     case 'editProfile': return <EditProfile />
     case 'addresses': return <Addresses />

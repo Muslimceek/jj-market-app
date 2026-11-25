@@ -2,15 +2,17 @@ import { useMemo, useRef, useState } from 'react'
 import {
   ChevronLeft, Share, Star, Ruler, Sparkles, Flag, Leaf, Minus, Plus,
   CircleCheck, ShoppingBag, Store, Check, X, ShieldCheck, ZoomIn,
+  MessageCircle, Copy, ArrowRight,
 } from 'lucide-react'
 import { useApp, tx, fmt, code, colorAxis, sizeAxis, hexOf, type Product } from './store'
 import { FavBtn, Grid, Sheet, Seg } from './ui'
 import { emptyF } from './Catalog'
 import { SIZE_ROWS } from './sizes'
 
-/* ---------- СТРАНИЦА ТОВАРА С НУЛЯ: WB/Trendyol скорость + Apple-чистота + фирменный #AE33FF ---------- */
+/* ---------- НОВАЯ КАРТОЧКА ТОВАРА: красивая цена, редакционная типографика, чат с продавцом ---------- */
 export function ProductPage({ id }: { id: string }) {
   const { cat, t, lang, pop, push, toast, sheet, addToCart } = useApp()
+  const ext = t.ext
   const p = cat.products.find((x) => x.id === id)!
   const cAx = colorAxis(p)
   const sAx = sizeAxis(p)
@@ -33,6 +35,7 @@ export function ProductPage({ id }: { id: string }) {
     : picked.reduce((a, [vid, n]) => a + (p.variants.find((v) => v.id === vid)?.price || p.price) * n, 0) || p.price
   const pickedLabel = picked.map(([vid, n]) => `${tx(sizeOf(vid)?.name, lang)} ×${n}`).join(', ')
   const colorName = tx(cAx?.values.find((v) => v.id === color)?.name, lang)
+  const savings = p.old > p.price ? p.old - p.price : 0
 
   const similar = useMemo(() => {
     const ids = new Set(p.categories.map((c) => c.id))
@@ -45,10 +48,17 @@ export function ProductPage({ id }: { id: string }) {
 
   const catName = tx(p.categories[0]?.name, lang)
   const desc = tx(p.desc, lang)
+  const descParagraphs = useMemo(() => {
+    const clean = (desc || tx(p.name, lang))
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+    return clean.split(/\n+/).map((s) => s.trim()).filter(Boolean)
+  }, [desc, p.name, lang])
   const imgs = p.images.length ? p.images : ['']
-
-  // Быстрые ключевые характеристики (видны сразу без прокрутки!)
   const quickHighlights = useMemo(() => p.features.slice(0, 3), [p.features])
+  const sku = code(p) || p.id.slice(0, 8)
+  const sellerName = p.seller || p.brand || 'JJ Market'
 
   const jumpImg = (k: number) => {
     setImgIdx(k)
@@ -64,6 +74,16 @@ export function ProductPage({ id }: { id: string }) {
   const openBrand = () => {
     const b = cat.filters.brands.find((x) => x.name === p.brand)
     if (b) push('list', { kind: 'all', title: b.name, f0: { ...emptyF(cat), brands: [b.id] } })
+    else push('list', { kind: 'all', title: sellerName })
+  }
+
+  const openSellerChat = () => {
+    push('sellerChat', { seller: sellerName, productId: p.id })
+  }
+
+  const copySku = () => {
+    navigator.clipboard?.writeText(sku)
+    toast(<span className="toast-row"><Check size={15} color="#16a34a" />{ext.skuCopied}: {sku}</span>)
   }
 
   const add = () => {
@@ -82,7 +102,7 @@ export function ProductPage({ id }: { id: string }) {
     )
   }
 
-  const infoTabs = [t.features, t.description, `${t.comments} (${p.reviews})`]
+  const infoTabs = [ext.aboutTab, t.features, `${t.comments} (${p.reviews})`]
 
   return (
     <div className="screen home-screen pd">
@@ -97,7 +117,7 @@ export function ProductPage({ id }: { id: string }) {
       </div>
 
       <div className="scroll pd-v2-scroll" onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 260)}>
-        {/* 1. Чёткая полноширинная галерея (как у WB/Apple) + миниатюры снизу */}
+        {/* 1. Полноширинная галерея + полоса миниатюр */}
         <div className="pd-hero-media">
           <div
             className="pd-hero-track"
@@ -113,7 +133,6 @@ export function ProductPage({ id }: { id: string }) {
               </div>
             ))}
           </div>
-
           {p.pct > 0 && <span className="pd-hero-pct">−{p.pct}%</span>}
           <button className="pd-hero-zoom" onClick={() => setZoomOpen(true)} aria-label="Zoom">
             <ZoomIn size={13} />
@@ -121,7 +140,6 @@ export function ProductPage({ id }: { id: string }) {
           </button>
         </div>
 
-        {/* Полоса миниатюр для мгновенного переключения фото */}
         {imgs.length > 1 && (
           <div className="pd-thumbs">
             {imgs.map((src, k) => (
@@ -132,21 +150,30 @@ export function ProductPage({ id }: { id: string }) {
           </div>
         )}
 
-        {/* 2. Главная карточка товара: цена, бренд, название, быстрые характеристики */}
-        <div className="pd-card">
-          <div className="pd-price-v2">
-            <div className="pd-pv-left">
-              <b className={p.pct > 0 ? 'sale' : ''}>{fmt(p.price)} ₸</b>
-              {p.old > 0 && <s>{fmt(p.old)} ₸</s>}
+        {/* 2. Эффектный блок цены, бренда, названия и быстрых характеристик */}
+        <div className="pd-card pd-hero-info">
+          <div className="pd-price-showcase">
+            <div className="pps-main">
+              <span className={'pps-now' + (p.pct > 0 ? ' sale' : '')}>
+                {fmt(p.price)}<em>₸</em>
+              </span>
+              {p.old > p.price && <s className="pps-old">{fmt(p.old)} ₸</s>}
             </div>
-            <span className={'stock' + (stockTotal > 0 ? '' : ' out')}>
-              <i />{stockTotal > 0 ? `${t.inStock} · ${stockTotal} ${t.pcs}` : t.outStock}
-            </span>
+            <div className="pps-badges">
+              {savings > 0 && (
+                <span className="pps-save">
+                  −{p.pct}% · {ext.youSave} {fmt(savings)} ₸
+                </span>
+              )}
+              <span className={'stock' + (stockTotal > 0 ? '' : ' out')}>
+                <i />{stockTotal > 0 ? `${t.inStock} · ${stockTotal} ${t.pcs}` : t.outStock}
+              </span>
+            </div>
           </div>
 
           <div className="pd-brand-bar">
             <button className="pd-brand-chip" onClick={openBrand}>
-              <b>{p.brand || p.seller}</b>
+              <b>{p.brand || sellerName}</b>
               {catName && <span>· {catName}</span>}
             </button>
             <button className="pd-rat-pill" onClick={() => setInfoTab(2)}>
@@ -158,7 +185,6 @@ export function ProductPage({ id }: { id: string }) {
 
           <h1 className="pd-title-v2">{tx(p.name, lang)}</h1>
 
-          {/* Ключевые характеристики сразу под названием — не нужно листать вниз! */}
           {quickHighlights.length > 0 && (
             <div className="pd-quick-specs">
               {quickHighlights.map((f, i) => (
@@ -171,7 +197,7 @@ export function ProductPage({ id }: { id: string }) {
           )}
         </div>
 
-        {/* 3. Карточка выбора цвета и размеров (мультивыбор + AI-подбор в одну строку) */}
+        {/* 3. Выбор цвета и размеров (мультивыбор + таблица + AI) */}
         {(cAx || (sAx && !noSizes)) && (
           <div className="pd-card">
             {cAx && (
@@ -210,7 +236,6 @@ export function ProductPage({ id }: { id: string }) {
                   </div>
                 </div>
 
-                {/* Ровная 4-колоночная сетка размеров */}
                 <div className="pd-sz-grid">
                   {vars.map((v) => {
                     const sz = sizeOf(v.id)
@@ -231,7 +256,6 @@ export function ProductPage({ id }: { id: string }) {
                   })}
                 </div>
 
-                {/* Аккуратная полоса выбранных размеров с удобным +/- для каждого */}
                 {picked.length > 0 && (
                   <div className="pd-picked-list">
                     {picked.map(([vid, n]) => {
@@ -264,14 +288,47 @@ export function ProductPage({ id }: { id: string }) {
           </div>
         )}
 
-        {/* 4. Компактные вкладки: Характеристики | Описание | Отзывы — быстрый выбор без прокрутки! */}
+        {/* 4. Карточка продавца с прямой кнопкой переписки! */}
+        <div className="pd-card pd-seller-card">
+          <div className="psc-top">
+            <span className="psc-av">
+              <Store size={19} />
+              <i className="psc-dot" />
+            </span>
+            <div className="psc-info">
+              <div className="psc-name">
+                <b>{sellerName}</b>
+                <ShieldCheck size={14} color="#AE33FF" />
+              </div>
+              <small>{ext.sellerOnline}</small>
+            </div>
+            <span className="psc-rat"><Star size={12} fill="#f59e0b" color="#f59e0b" />4.9</span>
+          </div>
+          <div className="psc-btns">
+            <button className="psc-chat-btn" onClick={openSellerChat}>
+              <MessageCircle size={16} />
+              <span>{ext.writeSeller}</span>
+            </button>
+            <button className="psc-store-btn" onClick={openBrand}>
+              <span>{ext.sellerProducts}</span>
+              <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
+
+        {/* 5. Редакционное описание, характеристики и отзывы во вкладках */}
         <div className="pd-card">
           <Seg items={infoTabs} value={infoTab} onChange={setInfoTab} />
 
           {infoTab === 0 && (
             <div className="pd-tab-body">
+              <div className="pd-editorial-desc">
+                {descParagraphs.map((para, i) => (
+                  <p key={i} className={i === 0 ? 'lead' : ''}>{para}</p>
+                ))}
+              </div>
               {p.badges.length > 0 && (
-                <div className="pd-badges-row">
+                <div className="pd-badges-row" style={{ marginTop: 12, marginBottom: 0 }}>
                   {p.badges.map((b) => (
                     <span key={b.slug} className="pd-b-chip" style={{ color: b.color || '#AE33FF' }}>
                       {b.slug.includes('organic') ? <Leaf size={12} /> : <Flag size={12} fill="currentColor" />}
@@ -280,23 +337,28 @@ export function ProductPage({ id }: { id: string }) {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {infoTab === 1 && (
+            <div className="pd-tab-body">
               <div className="pd-spec-list">
-                <div className="ps-row"><span>Артикул</span><b>{code(p) || p.id.slice(0, 8)}</b></div>
-                <div className="ps-row"><span>{t.brand}</span><b>{p.brand || p.seller}</b></div>
+                <div className="ps-row">
+                  <span>{ext.skuLabel}</span>
+                  <button className="sku-copy-btn" onClick={copySku}>
+                    <b>{sku}</b>
+                    <Copy size={12} />
+                  </button>
+                </div>
+                <div className="ps-row"><span>{t.brand}</span><b>{p.brand || sellerName}</b></div>
                 {p.features.map((f, i) => (
                   <div className="ps-row" key={i}>
                     <span>{tx(f.name, lang)}</span>
                     <b>{tx(f.value, lang)}</b>
                   </div>
                 ))}
-                <div className="ps-row"><span>{t.seller}</span><b>{p.seller}</b></div>
+                <div className="ps-row"><span>{t.seller}</span><b>{sellerName}</b></div>
               </div>
-            </div>
-          )}
-
-          {infoTab === 1 && (
-            <div className="pd-tab-body">
-              <p className="pd-desc-full">{desc || tx(p.name, lang)}</p>
             </div>
           )}
 
@@ -310,19 +372,16 @@ export function ProductPage({ id }: { id: string }) {
                   </div>
                   <small>{p.reviews} {t.ratings}</small>
                 </div>
-                <div className="prb-seller">
-                  <Store size={16} color="#AE33FF" />
-                  <div>
-                    <small>{t.seller}</small>
-                    <b>{p.seller}</b>
-                  </div>
-                </div>
+                <button className="prb-ask-btn" onClick={openSellerChat}>
+                  <MessageCircle size={15} />
+                  <span>{ext.askSellerShort}</span>
+                </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* 5. Похожие товары */}
+        {/* 6. Похожие товары */}
         {similar.length > 0 && (
           <div className="pd-sim-wrap">
             <h3 className="pd-h">{t.similar}</h3>
@@ -332,8 +391,12 @@ export function ProductPage({ id }: { id: string }) {
         <div style={{ height: 22 }} />
       </div>
 
-      {/* Липкая нижняя панель с фирменной кнопкой #AE33FF */}
+      {/* Липкая нижняя панель с быстрой кнопкой чата с продавцом + ценой + «В корзину» */}
       <div className="pd-bar">
+        <button className="pd-chat-fab" onClick={openSellerChat} aria-label={ext.writeSeller} title={ext.writeSeller}>
+          <MessageCircle size={20} />
+          <i />
+        </button>
         <div>
           <b>{fmt(sum)} ₸</b>
           <small>{noSizes ? colorName || `${p.minQty} ${t.pcs}` : pickedLabel || colorName || t.chooseSize}</small>
@@ -343,12 +406,11 @@ export function ProductPage({ id }: { id: string }) {
           onClick={add}
           disabled={stockTotal <= 0}
         >
-          <ShoppingBag size={17} />
+          <ShoppingBag size={16} />
           {stockTotal <= 0 ? t.outStock : (!noSizes && !picked.length ? t.chooseSize : t.addToCart)}
         </button>
       </div>
 
-      {/* Полноэкранный просмотр фото */}
       {zoomOpen && (
         <div className="zoom-overlay" onClick={() => setZoomOpen(false)}>
           <button className="zoom-close" onClick={() => setZoomOpen(false)} aria-label="Close"><X size={20} /></button>

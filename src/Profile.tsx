@@ -134,6 +134,10 @@ export function Profile() {
               </button>
             </>
           )}
+          <button className="ios-row" onClick={() => push('sellerChats')}>
+            <span className="ir-l"><i className="ir-ic violet"><MessageCircle size={16} /></i>{ext.sellerChats}</span>
+            <span className="ir-r">{Object.keys(s.chats || {}).length > 0 && <em>{Object.keys(s.chats || {}).length}</em>}<ChevronRight size={16} className="ios-chev" /></span>
+          </button>
           <button className="ios-row" onClick={() => push('news')}>
             <span className="ir-l"><i className="ir-ic rose"><Bell size={16} /></i>{M.news}</span>
             <ChevronRight size={16} className="ios-chev" />

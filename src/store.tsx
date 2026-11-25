@@ -27,13 +27,22 @@ export interface Address {
 }
 export interface Order { id: string; date: string; lines: { productId: string; label: string; qty: number; price: number }[]; total: number; address: string; pay: string; status: number }
 export interface User { first: string; last: string; email: string; phone: string; gender: string; birth: string }
+export interface SellerMessage {
+  id: string
+  from: 'buyer' | 'seller'
+  text: string
+  time: string
+  productId?: string
+}
 export interface State {
   onboarded: boolean; authSeen: boolean; lang: Lang; user: User | null; favs: string[]; cart: CartLine[]; addresses: Address[]; addressId: string | null
   orders: Order[]; pay: string | null; notif: { push: boolean; mail: boolean; sms: boolean }
+  chats: Record<string, SellerMessage[]>
 }
 export const initialState: State = {
   onboarded: false, authSeen: false, lang: 'ru', user: null, favs: [], cart: [], addresses: [], addressId: null, orders: [], pay: null,
   notif: { push: true, mail: false, sms: true },
+  chats: {},
 }
 export const STORE_KEY = 'jj-market-demo-v1'
 export const loadState = (): State => {
