@@ -95,6 +95,7 @@ export default function App() {
     window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey)
   })
 
+  const [authStartView, setAuthStartView] = useState<'login' | 'reg'>('login')
   const login = (u: State['user']) => { setS((x) => ({ ...x, user: u, onboarded: true, authSeen: true })); setStack((st) => st.filter((r) => r.name !== 'login')); setLoginBar(null); ctx.toast(t.loggedIn) }
 
   const cartCount = s.cart.reduce((a, c) => a + c.qty, 0)
@@ -107,11 +108,39 @@ export default function App() {
     { k: 'profile', l: t.tabs.profile, ic: UserIc },
   ]
 
+  const isAuthStage = !splash && !!cat && (!s.onboarded || (!s.user && !s.authSeen) || showLogin)
+
   let body: ReactNode
   if (splash || !cat) body = <Splash />
-  else if (!s.onboarded) body = <Onboarding onDone={() => setS((x) => ({ ...x, onboarded: true }))} />
-  else if (!s.user && !s.authSeen) body = <Login onDone={login} canSkip={() => setS((x) => ({ ...x, authSeen: true }))} />
-  else if (showLogin) body = <Login initialView={top?.p?.mode === 'reg' ? 'reg' : 'login'} onDone={login} canSkip={() => setStack((st) => st.filter((r) => r.name !== 'login'))} />
+  else if (!s.onboarded) {
+    body = (
+      <Onboarding
+        onDone={() => { setAuthStartView('login'); setS((x) => ({ ...x, onboarded: true, authSeen: false })) }}
+        onRegister={() => { setAuthStartView('reg'); setS((x) => ({ ...x, onboarded: true, authSeen: false })) }}
+        onSkip={() => setS((x) => ({ ...x, onboarded: true, authSeen: true }))}
+      />
+    )
+  }
+  else if (!s.user && !s.authSeen) {
+    body = (
+      <Login
+        initialView={authStartView}
+        onDone={login}
+        onGuide={() => setS((x) => ({ ...x, onboarded: false }))}
+        canSkip={() => setS((x) => ({ ...x, authSeen: true }))}
+      />
+    )
+  }
+  else if (showLogin) {
+    body = (
+      <Login
+        initialView={top?.p?.mode === 'reg' ? 'reg' : 'login'}
+        onDone={login}
+        onGuide={() => { setStack((st) => st.filter((r) => r.name !== 'login')); setS((x) => ({ ...x, onboarded: false })) }}
+        canSkip={() => setStack((st) => st.filter((r) => r.name !== 'login'))}
+      />
+    )
+  }
   else if (top) body = <div className="screen enter" key={stack.length + top.name}>{render(top)}</div>
   else body = (
     <>
@@ -136,7 +165,7 @@ export default function App() {
     <AppCtx.Provider value={ctx}>
       <div className="device">
         <div className="phone">
-          <div className="statusbar"><Clock /><span className="island" /><span className="icons"><Signal size={14} /><Wifi size={14} /><BatteryFull size={20} /></span></div>
+          <div className={'statusbar' + (isAuthStage ? ' hero-bar' : '')}><Clock /><span className="island" /><span className="icons"><Signal size={14} /><Wifi size={14} /><BatteryFull size={20} /></span></div>
           {body}
           {top && !showLogin && loginBar && <button className="login-bar float" onClick={() => { setLoginBar(null); ctx.push('login') }}>{loginBar}</button>}
           <div className="homebar"><i /></div>
