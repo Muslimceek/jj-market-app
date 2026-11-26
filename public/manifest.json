@@ -1,0 +1,17 @@
+{
+  "name": "JJ Market",
+  "short_name": "JJ Market",
+  "description": "JJ Market — маркетплейс брендовых товаров с доставкой по Узбекистану, Казахстану, России и Кыргызстану",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#AE33FF",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

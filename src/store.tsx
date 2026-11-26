@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import { DICTS, type Dict, type Lang } from './i18n'
+import { countryByCode, type CountryCode } from './geo'
 
 /* ---------- типы каталога (public/data/catalog.json, см. scripts/fetch_catalog.py) ---------- */
 export type I18n = Partial<Record<'ru' | 'tr' | 'kk' | 'en', string>>
@@ -34,15 +35,36 @@ export interface SellerMessage {
   time: string
   productId?: string
 }
+export interface UserReview {
+  id: string
+  author: string
+  rating: number
+  fit: 'small' | 'true' | 'large'
+  height?: string
+  weight?: string
+  size?: string
+  text: string
+  date: string
+  verified?: boolean
+}
 export interface State {
-  onboarded: boolean; authSeen: boolean; lang: Lang; user: User | null; favs: string[]; cart: CartLine[]; addresses: Address[]; addressId: string | null
+  onboarded: boolean; authSeen: boolean; lang: Lang; country: CountryCode
+  user: User | null; favs: string[]; cart: CartLine[]; addresses: Address[]; addressId: string | null
   orders: Order[]; pay: string | null; notif: { push: boolean; mail: boolean; sms: boolean }
   chats: Record<string, SellerMessage[]>
+  recentIds: string[]
+  searchHistory: string[]
+  followedSellers: string[]
+  userReviews: Record<string, UserReview[]>
 }
 export const initialState: State = {
-  onboarded: false, authSeen: false, lang: 'ru', user: null, favs: [], cart: [], addresses: [], addressId: null, orders: [], pay: null,
+  onboarded: false, authSeen: false, lang: 'ru', country: 'KZ', user: null, favs: [], cart: [], addresses: [], addressId: null, orders: [], pay: null,
   notif: { push: true, mail: false, sms: true },
   chats: {},
+  recentIds: [],
+  searchHistory: [],
+  followedSellers: [],
+  userReviews: {},
 }
 export const STORE_KEY = 'jj-market-demo-v1'
 export const loadState = (): State => {
@@ -57,6 +79,7 @@ export interface Ctx {
   sheet: (n: ReactNode | null) => void; toast: (m: ReactNode) => void
   requireLogin: (msg?: string) => boolean
   addToCart: (productId: string, lines: { variantId?: string; label: string; qty: number }[]) => void
+  money: (kzt: number) => string
 }
 export const AppCtx = createContext<Ctx>(null as any)
 export const useApp = () => useContext(AppCtx)
@@ -66,7 +89,16 @@ export const tx = (o: I18n | undefined, lang: Lang) => {
   const raw = o ? o[lang] || o.ru || o.tr || o.en || o.kk || '' : ''
   return raw === 'Женская одежа' ? 'Женская одежда' : raw
 }
-export const fmt = (n: number) => Math.round(n).toLocaleString('ru-RU').replace(/ |,/g, ' ')
+export const fmt = (n: number) => Math.round(n).toLocaleString('ru-RU').replace(/\u00A0|,/g, ' ')
+
+/** Мультивалютный форматтер для 4 стран JJ Market (UZ · KZ · RU · KG) */
+export function fmtMoney(kztAmount: number, country: CountryCode): string {
+  const co = countryByCode(country)
+  const raw = kztAmount * co.rateFromKzt
+  const val = co.roundTo > 1 ? Math.round(raw / co.roundTo) * co.roundTo : Math.round(raw)
+  return `${fmt(val)} ${co.symbol}`
+}
+
 export const code = (p: Product) => p.slug.split('-').pop() || ''
 export const dict = (l: Lang) => DICTS[l]
 

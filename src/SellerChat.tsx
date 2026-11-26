@@ -71,7 +71,7 @@ function buildSellerReply(seller: string, q: string, p: Product | undefined, lan
 
 /* ---------- ЧАТ С ПРОДАВЦОМ ПО КОНКРЕТНОМУ ТОВАРУ ---------- */
 export function SellerChat({ seller, productId }: { seller: string; productId?: string }) {
-  const { cat, s, set, t, lang, pop, push } = useApp()
+  const { cat, s, set, t, lang, pop, push, money } = useApp()
   const ext = t.ext
   const p = useMemo(() => (productId ? cat.products.find((x) => x.id === productId) : undefined), [cat.products, productId])
   const chatKey = seller || 'JJ Market'
@@ -155,8 +155,8 @@ export function SellerChat({ seller, productId }: { seller: string; productId?: 
           <div className="scp-info">
             <span className="scp-name">{tx(p.name, lang)}</span>
             <div className="scp-price">
-              <b>{fmt(p.price)} ₸</b>
-              {p.old > p.price && <s>{fmt(p.old)} ₸</s>}
+              <b>{money(p.price)}</b>
+              {p.old > p.price && <s>{money(p.old)}</s>}
               {p.pct > 0 && <em>−{p.pct}%</em>}
             </div>
           </div>

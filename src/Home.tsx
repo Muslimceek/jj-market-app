@@ -4,10 +4,10 @@ import {
   ChevronLeft, Globe, Sparkles, Flame, Percent, Store, Home as HomeIc, Briefcase,
   Navigation, Trash2, Pencil, ArrowRight, Zap, LayoutGrid, Clock, Star, ShoppingBag, CircleCheck,
 } from 'lucide-react'
-import { useApp, tx, code, fmt, productsIn, type Address, type Product } from './store'
-import { Grid, HScroll, SectionHead, Sheet, LangSheet, Empty, Seg, SkeletonGrid } from './ui'
+import { useApp, tx, code, productsIn, type Address, type Product } from './store'
+import { Grid, HScroll, SectionHead, Sheet, LangSheet, CurrencySheet, Empty, Seg, SkeletonGrid } from './ui'
 import { emptyF } from './Catalog'
-import { COUNTRIES, PICKUP_POINTS, findCountryByName, type CountryInfo } from './geo'
+import { COUNTRIES, PICKUP_POINTS, countryByCode, findCountryByName, type CountryInfo } from './geo'
 import { LANGS } from './i18n'
 
 /* ---------- Интерактивная шторка адреса: 4 страны (UZ/KZ/RU/KG) + умный автоподбор городов ---------- */
@@ -124,6 +124,8 @@ export function AddressSheet() {
     }
     set((x) => ({
       ...x,
+      country: selectedCountry.code,
+      pay: selectedCountry.payments[0]?.title ?? x.pay,
       addresses: editId ? x.addresses.map((y) => (y.id === editId ? next : y)) : [next, ...x.addresses],
       addressId: next.id,
     }))
@@ -147,6 +149,8 @@ export function AddressSheet() {
     }
     set((x) => ({
       ...x,
+      country: co.code,
+      pay: co.payments[0]?.title ?? x.pay,
       addresses: x.addresses.some((y) => y.id === pt.id) ? x.addresses : [...x.addresses, addr],
       addressId: pt.id,
     }))
@@ -413,7 +417,7 @@ interface StoryItem {
 }
 
 function StoryViewer({ stories, startIdx, onSeen }: { stories: StoryItem[]; startIdx: number; onSeen: (id: string) => void }) {
-  const { sheet, push, lang } = useApp()
+  const { sheet, push, lang, money } = useApp()
   const [idx, setIdx] = useState(startIdx)
   const cur = stories[idx]
 
@@ -461,7 +465,7 @@ function StoryViewer({ stories, startIdx, onSeen }: { stories: StoryItem[]; star
               <div className="sp-info">
                 <span className="sp-name">{tx(p.name, lang)}</span>
                 <div className="sp-price">
-                  <b>{fmt(p.price)} ₸</b>
+                  <b>{money(p.price)}</b>
                   {p.pct > 0 && <em>-{p.pct}%</em>}
                 </div>
               </div>
@@ -712,6 +716,14 @@ export function Home() {
 
   const addr = addrMeta(s)
   const shortLang = LANGS.find((l) => l.code === s.lang)?.short || 'RU'
+  const curCountry = countryByCode(s.country)
+  const recentProducts = useMemo(() => {
+    const mapped = s.recentIds
+      .map((id) => cat.products.find((p) => p.id === id))
+      .filter((p): p is Product => !!p)
+    if (mapped.length >= 2) return mapped.slice(0, 8)
+    return forYouProds.slice(2, 8)
+  }, [s.recentIds, cat.products, forYouProds])
 
   const openStory = (i: number) => {
     sheet(
@@ -744,6 +756,11 @@ export function Home() {
               <b>{addr ? addr.short : t.chooseAddress}</b>
             </span>
             <ChevronDown size={15} className="jj-addr-chev" />
+          </button>
+
+          <button className="jj-curr-btn" onClick={() => sheet(<CurrencySheet />)} aria-label={t.ext.currencyTitle}>
+            <span>{curCountry.flag}</span>
+            <b>{curCountry.symbol}</b>
           </button>
 
           <button className="jj-lang-btn" onClick={() => sheet(<LangSheet />)} aria-label={t.language}>
@@ -896,6 +913,32 @@ export function Home() {
           </>
         )}
 
+        {/* 5.5. Вы недавно смотрели (компактная живая лента) */}
+        {recentProducts.length > 0 && (
+          <section className="recent-sec">
+            <SectionHead title={t.ext.recentViewed} sub={t.ext.recentSub} />
+            <div className="recent-strip">
+              {recentProducts.map((p, i) => (
+                <button
+                  key={p.id}
+                  className="recent-card"
+                  style={{ animationDelay: `${i * 45}ms` }}
+                  onClick={() => push('product', { id: p.id })}
+                >
+                  <div className="rc-media">
+                    {p.images[0] && <img src={'/' + p.images[0]} loading="lazy" decoding="async" alt="" />}
+                    {p.pct > 0 && <em>−{p.pct}%</em>}
+                  </div>
+                  <div className="rc-info">
+                    <b>{tx(p.name, lang)}</b>
+                    <RecentPrice amount={p.price} />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* 6. Интерактивная лента рекомендаций */}
         <div className="feed-tabs-wrap">
           <div className="feed-tabs">
@@ -937,48 +980,161 @@ export function Home() {
   )
 }
 
-/* ---------- Поиск ---------- */
-const RECENT = 'jj-market-recent-search'
+function RecentPrice({ amount }: { amount: number }) {
+  const { money } = useApp()
+  return <span>{money(amount)}</span>
+}
+
+/* ---------- Умный Поиск (WB / Ozon / Trendyol: история, тренды, мгновенные превью) ---------- */
 export function SearchScreen() {
-  const { cat, pop, t, lang, push } = useApp()
+  const { cat, s, set, pop, t, lang, push, money } = useApp()
+  const ext = t.ext
   const [q, setQ] = useState('')
   const ref = useRef<HTMLInputElement>(null)
-  const [recent, setRecent] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem(RECENT) || '[]') } catch { return [] } })
   useEffect(() => { ref.current?.focus() }, [])
-  const norm = (x: string) => x.toLocaleLowerCase('tr').normalize('NFKD').replace(/[̀-ͯ]/g, '')
+
+  const norm = (x: string) => x.toLocaleLowerCase('tr').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
   const res: Product[] = useMemo(() => {
     const n = norm(q.trim())
     if (n.length < 2) return []
-    return cat.products.filter((p) => code(p).includes(n) || Object.values(p.name).some((v) => v && norm(v).includes(n)) || norm(p.brand).includes(n))
+    return cat.products.filter(
+      (p) =>
+        code(p).includes(n) ||
+        Object.values(p.name).some((v) => v && norm(v).includes(n)) ||
+        norm(p.brand).includes(n) ||
+        norm(p.seller).includes(n),
+    )
   }, [q, cat])
-  const remember = (v: string) => { const r = [v, ...recent.filter((x) => x !== v)].slice(0, 6); setRecent(r); localStorage.setItem(RECENT, JSON.stringify(r)) }
+
+  const remember = (v: string) => {
+    const clean = v.trim()
+    if (!clean) return
+    set((x) => ({ ...x, searchHistory: [clean, ...x.searchHistory.filter((i) => i !== clean)].slice(0, 8) }))
+  }
+  const removeHist = (v: string) => {
+    set((x) => ({ ...x, searchHistory: x.searchHistory.filter((i) => i !== v) }))
+  }
   const topBrands = useMemo(() => [...cat.filters.brands].sort((a, b) => b.count - a.count).slice(0, 6), [cat.filters.brands])
+  const trending = lang === 'tr'
+    ? ['Ayakkabı', 'Çanta', 'Ceket', 'Deri', 'İndirim']
+    : lang === 'kk'
+      ? ['Кроссовки', 'Сөмке', 'Күртеше', 'Былғары', 'Жеңілдік']
+      : ['Кроссовки', 'Кожаная куртка', 'Сумка', 'Ботинки', 'Уход']
+  const recentViewed = useMemo(
+    () => s.recentIds.map((id) => cat.products.find((p) => p.id === id)).filter((p): p is Product => !!p).slice(0, 6),
+    [s.recentIds, cat.products],
+  )
 
   return (
-    <div className="screen">
+    <div className="screen home-screen">
       <div className="search-top">
-        <button className="tb-back" onClick={pop}><ChevronLeft size={24} /></button>
+        <button className="tb-back" onClick={pop} aria-label={t.back}><ChevronLeft size={24} /></button>
         <div className="search-box live">
-          <SearchIc size={17} color="#6d28d9" />
-          <input ref={ref} placeholder={t.search} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && q.trim() && remember(q.trim())} />
+          <SearchIc size={17} color="#AE33FF" />
+          <input
+            ref={ref}
+            placeholder={t.search}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && q.trim() && remember(q)}
+          />
           {q && <button onClick={() => setQ('')} aria-label="Clear"><X size={17} /></button>}
         </div>
       </div>
+
       <div className="scroll">
         {q.trim().length < 2 ? (
           <>
-            {recent.length > 0 && (
-              <div className="recent">{recent.map((r) => <button key={r} className="chip" onClick={() => setQ(r)}>{r}</button>)}</div>
+            {s.searchHistory.length > 0 && (
+              <div className="s-block">
+                <div className="s-bh">
+                  <b><Clock size={13} />{ext.searchHistory}</b>
+                  <button type="button" onClick={() => set((x) => ({ ...x, searchHistory: [] }))}>{ext.clearHistory}</button>
+                </div>
+                <div className="s-hist-list">
+                  {s.searchHistory.map((item) => (
+                    <div className="s-hist-chip" key={item}>
+                      <button type="button" onClick={() => setQ(item)}>{item}</button>
+                      <button type="button" className="shc-x" onClick={() => removeHist(item)} aria-label="Remove"><X size={12} /></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
-            <div className="sec-h" style={{ marginTop: 8 }}><h2>{t.homeUI.brandsTitle}</h2></div>
-            <div className="chips wrap" style={{ marginBottom: 14 }}>
-              {topBrands.map((b) => <button key={b.id} className="chip" onClick={() => setQ(b.name)}>{b.name}</button>)}
+
+            <div className="s-block">
+              <div className="s-bh"><b><Flame size={13} color="#E03556" />{ext.searchPopular}</b></div>
+              <div className="chips wrap">
+                {trending.map((tr) => (
+                  <button key={tr} className="chip trend" onClick={() => { setQ(tr); remember(tr) }}>
+                    <Sparkles size={11} color="#AE33FF" />{tr}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="sec-h" style={{ marginTop: 8 }}><h2>{t.homeUI.catsTitle}</h2></div>
-            <div className="chips wrap">{cat.categories.filter((c) => c.count > 0).map((c) => <button key={c.id} className="chip" onClick={() => push('subcats', { id: c.id })}>{tx(c.name, lang)}</button>)}</div>
+
+            {recentViewed.length > 0 && (
+              <div className="s-block">
+                <div className="s-bh"><b>{ext.recentViewed}</b></div>
+                <div className="recent-strip">
+                  {recentViewed.map((p) => (
+                    <button key={p.id} className="recent-card" onClick={() => push('product', { id: p.id })}>
+                      <div className="rc-media">
+                        {p.images[0] && <img src={'/' + p.images[0]} loading="lazy" alt="" />}
+                        {p.pct > 0 && <em>−{p.pct}%</em>}
+                      </div>
+                      <div className="rc-info">
+                        <b>{tx(p.name, lang)}</b>
+                        <span>{money(p.price)}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="s-block">
+              <div className="s-bh"><b>{t.homeUI.brandsTitle}</b></div>
+              <div className="chips wrap">
+                {topBrands.map((b) => <button key={b.id} className="chip" onClick={() => { setQ(b.name); remember(b.name) }}>{b.name}</button>)}
+              </div>
+            </div>
+
+            <div className="s-block">
+              <div className="s-bh"><b>{t.homeUI.catsTitle}</b></div>
+              <div className="chips wrap">
+                {cat.categories.filter((c) => c.count > 0).map((c) => (
+                  <button key={c.id} className="chip" onClick={() => push('subcats', { id: c.id })}>{tx(c.name, lang)}</button>
+                ))}
+              </div>
+            </div>
           </>
         ) : res.length ? (
-          <><div className="muted small" style={{ margin: '4px 0 12px' }}>{res.length} {t.items}</div><Grid items={res} /></>
+          <>
+            {/* Живые быстрые совпадения прямо под строкой поиска */}
+            <div className="s-instant-card">
+              <div className="s-bh"><b><Zap size={13} color="#AE33FF" />{ext.searchInstant}</b><small>{res.length} {t.items}</small></div>
+              {res.slice(0, 4).map((p) => (
+                <button
+                  key={p.id}
+                  className="s-inst-row"
+                  onClick={() => { remember(q); push('product', { id: p.id }) }}
+                >
+                  <img src={'/' + p.images[0]} loading="lazy" alt="" />
+                  <div className="sir-txt">
+                    <b>{tx(p.name, lang)}</b>
+                    <small>{p.brand || p.seller}</small>
+                  </div>
+                  <div className="sir-price">
+                    <b>{money(p.price)}</b>
+                    {p.pct > 0 && <em>−{p.pct}%</em>}
+                  </div>
+                  <ArrowRight size={14} color="#8E8E98" />
+                </button>
+              ))}
+            </div>
+            <Grid items={res} />
+          </>
         ) : <Empty icon={<SearchIc size={26} />} title={t.noProducts} sub={t.noProductsSub} />}
       </div>
     </div>

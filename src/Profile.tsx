@@ -3,12 +3,12 @@ import {
   Bell, User as UserIc, ChevronLeft, MapPin, Pencil, Trash2, Plus, Package, Star,
   Megaphone, Send, Sparkles, ChevronDown, MessageCircle, Check, LogOut, Phone, Mail,
   ChevronRight, Percent, Heart, Globe, Settings as SettingsIc, FileText, Shield,
-  HelpCircle, LogIn, UserPlus,
+  HelpCircle, LogIn, UserPlus, Truck, Copy, QrCode,
 } from 'lucide-react'
-import { useApp, tx, fmt, type Address, type User } from './store'
+import { useApp, tx, type Address, type User } from './store'
 import { TopBar, Row, Empty, Seg, Sheet, LangSheet, Grid } from './ui'
 import { AddressSheet } from './Home'
-import { COUNTRIES } from './geo'
+import { COUNTRIES, countryByCode } from './geo'
 import { LANGS } from './i18n'
 
 /* ---------- ПРОФИЛЬ С НУЛЯ: Apple iOS-группы + виджеты + рабочие кнопки даже для гостей ---------- */
@@ -273,7 +273,7 @@ export function AddressForm({ id }: { id?: string }) {
 const dfmt = (iso: string, lang: string) => new Date(iso).toLocaleString(lang === 'tr' ? 'tr-TR' : lang === 'kk' ? 'kk-KZ' : 'ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
 export function Orders() {
-  const { s, t, push, lang, cat } = useApp()
+  const { s, t, push, lang, cat, money } = useApp()
   return (
     <div className="screen home-screen">
       <TopBar title={t.ordersT} />
@@ -283,8 +283,8 @@ export function Orders() {
           <button className="order-card" key={o.id} onClick={() => push('order', { id: o.id })}>
             <div className="oc-h"><b>{t.order} №{o.id}</b><span className={'st s' + o.status}>{t.statuses[o.status]}</span></div>
             <div className="muted small">{dfmt(o.date, lang)}</div>
-            <div className="oc-imgs">{o.lines.map((l, i) => { const p = cat.products.find((x) => x.id === l.productId); return p ? <img key={i} src={'/' + p.images[0]} alt="" /> : null })}</div>
-            <div className="oc-sum">{fmt(o.total)} ₸</div>
+            <div className="oc-imgs">{o.lines.map((l, i) => { const p = cat.products.find((x) => x.id === l.productId); return p ? <img key={i} src={'/' + p.images[0]} loading="lazy" alt="" /> : null })}</div>
+            <div className="oc-sum">{money(o.total)}</div>
           </button>
         ))}
       </div>
@@ -292,37 +292,155 @@ export function Orders() {
   )
 }
 
+/** Детерминированный SVG QR-код для ПВЗ JJ (визуальное ТЗ для разработчиков) */
+function PickupQr({ seed }: { seed: string }) {
+  const cells: [number, number][] = []
+  let h = 2166136261
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619)
+  const isFinder = (r: number, c: number) =>
+    (r < 5 && c < 5) || (r < 5 && c > 11) || (r > 11 && c < 5)
+  for (let r = 0; r < 17; r++) {
+    for (let c = 0; c < 17; c++) {
+      if (isFinder(r, c)) continue
+      h = Math.imul(h ^ (r * 31 + c * 17), 16777619)
+      if ((h >>> 0) % 10 < 5) cells.push([c, r])
+    }
+  }
+  const finder = (x: number, y: number) => (
+    <g key={`${x}-${y}`}>
+      <rect x={x} y={y} width={5} height={5} rx={0.9} fill="#222226" />
+      <rect x={x + 1} y={y + 1} width={3} height={3} rx={0.4} fill="#fff" />
+      <rect x={x + 1.7} y={y + 1.7} width={1.6} height={1.6} rx={0.3} fill="#AE33FF" />
+    </g>
+  )
+  return (
+    <svg viewBox="0 0 17 17" className="qr-svg" aria-hidden>
+      {finder(0, 0)}
+      {finder(12, 0)}
+      {finder(0, 12)}
+      {cells.map(([c, r], idx) => (
+        <rect key={idx} x={c + 0.1} y={r + 0.1} width={0.82} height={0.82} rx={0.22} fill="#222226" />
+      ))}
+    </svg>
+  )
+}
+
 export function OrderDetail({ id }: { id: string }) {
-  const { s, set, t, lang, cat, push, toast } = useApp()
+  const { s, set, t, lang, cat, push, toast, money } = useApp()
+  const ext = t.ext
   const o = s.orders.find((x) => x.id === id)
   if (!o) return null
+  const pickupCode = `${o.id.slice(0, 3)}-${o.id.slice(-3)}`
+  const cancelled = o.status === 3
+  const trackPct = cancelled ? 0 : o.status === 0 ? 28 : o.status === 1 ? 66 : 100
+
+  const copyPickup = () => {
+    navigator.clipboard?.writeText(pickupCode)
+    toast(<span className="toast-row"><Check size={15} color="#16a34a" />{ext.qrCopied}: {pickupCode}</span>)
+  }
+
   return (
-    <div className="screen">
+    <div className="screen home-screen">
       <TopBar title={`${t.order} №${o.id}`} />
-      <div className="scroll">
-        <div className={'od-status s' + o.status}>{t.statuses[o.status]}</div>
-        <div className="od-bars">{[0, 1, 2].map((i) => <i key={i} className={o.status !== 3 && i <= o.status ? 'on' : ''} />)}</div>
-        <div className="muted small">{dfmt(o.date, lang)}</div>
-        <div className="od-addr">{o.address}</div>
-        {o.lines.map((l, i) => {
-          const p = cat.products.find((x) => x.id === l.productId)
-          if (!p) return null
-          return (
-            <div className="od-line" key={i} onClick={() => push('product', { id: p.id })}>
-              <img src={'/' + p.images[0]} alt="" />
-              <div><b>{fmt(l.price)} ₸</b><span>{tx(p.name, lang)}</span><small>{l.label}</small></div>
-              <span className="od-q">{l.qty} {t.pcs} × {fmt(l.price)} ₸</span>
+      <div className="scroll od-scroll">
+        {/* Живой анимированный трекер маршрута доставки */}
+        <div className="od-track-card">
+          <div className="od-tc-top">
+            <div>
+              <span className={'od-status s' + o.status}>{t.statuses[o.status]}</span>
+              <small>{dfmt(o.date, lang)}</small>
             </div>
-          )
-        })}
-        <div className="totals">
-          <div><span>{t.orderSum}</span><span>{fmt(o.total)} ₸</span></div>
-          <div><span>{t.delivery}</span><span>0 ₸</span></div>
-          <div><span>{t.payMethod}</span><span>{o.pay}</span></div>
-          <div className="big"><span>{t.toPay}</span><span>{fmt(o.total)} ₸</span></div>
+            <span className="od-tc-ic"><Truck size={18} /></span>
+          </div>
+
+          {!cancelled && (
+            <div className="od-live-route">
+              <div className="od-lr-line"><i style={{ width: `${trackPct}%` }} /></div>
+              <div className="od-lr-steps">
+                {ext.onbOrderSteps.map((lbl, i) => {
+                  const done = i < o.status || o.status === 2
+                  const now = i === o.status && o.status < 2
+                  return (
+                    <span key={lbl} className={done ? 'done' : now ? 'now' : ''}>
+                      <i>{done ? <Check size={10} strokeWidth={3} /> : null}</i>
+                      {lbl}
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="od-addr-row">
+            <MapPin size={15} color="#AE33FF" />
+            <span>{o.address}</span>
+          </div>
         </div>
-        <Row label={t.writeSupport} onClick={() => push('support')} />
-        {o.status === 0 && <Row label={t.cancelOrder} onClick={() => { set((x) => ({ ...x, orders: x.orders.map((y) => (y.id === o.id ? { ...y, status: 3 } : y)) })); toast(t.cancelled) }} />}
+
+        {/* Интерактивный QR-код для получения в ПВЗ JJ (с лазерной анимацией) */}
+        {!cancelled && (
+          <div className="od-qr-card">
+            <div className="od-qr-head">
+              <QrCode size={16} color="#AE33FF" />
+              <div>
+                <b>{ext.qrTitle}</b>
+                <small>{ext.qrSub}</small>
+              </div>
+            </div>
+            <div className="od-qr-box">
+              <div className="od-qr-frame">
+                <PickupQr seed={o.id} />
+                <span className="od-qr-laser" />
+              </div>
+              <div className="od-qr-code-info">
+                <small>{ext.qrCodeLbl}</small>
+                <strong>{pickupCode}</strong>
+                <button type="button" className="od-copy-btn" onClick={copyPickup}>
+                  <Copy size={13} />
+                  <span>{pickupCode}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Товары заказа */}
+        <div className="chk-card">
+          {o.lines.map((l, i) => {
+            const p = cat.products.find((x) => x.id === l.productId)
+            if (!p) return null
+            return (
+              <div className="od-line" key={i} onClick={() => push('product', { id: p.id })}>
+                <img src={'/' + p.images[0]} loading="lazy" alt="" />
+                <div><b>{money(l.price)}</b><span>{tx(p.name, lang)}</span><small>{l.label}</small></div>
+                <span className="od-q">{l.qty} {t.pcs}</span>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="summary-card">
+          <div className="sum-row"><span>{t.orderSum}</span><b>{money(o.total)}</b></div>
+          <div className="sum-row"><span>{t.delivery}</span><b className="green-txt">{money(0)}</b></div>
+          <div className="sum-row"><span>{t.payMethod}</span><b>{o.pay}</b></div>
+          <div className="sum-divider" />
+          <div className="sum-total"><span>{t.toPay}</span><b>{money(o.total)}</b></div>
+        </div>
+
+        <div className="ios-group" style={{ marginTop: 10 }}>
+          <Row label={t.writeSupport} onClick={() => push('support')} />
+          {o.status === 0 && (
+            <Row
+              danger
+              label={t.cancelOrder}
+              onClick={() => {
+                set((x) => ({ ...x, orders: x.orders.map((y) => (y.id === o.id ? { ...y, status: 3 } : y)) }))
+                toast(t.cancelled)
+              }}
+            />
+          )}
+        </div>
+        <div style={{ height: 24 }} />
       </div>
     </div>
   )
@@ -361,7 +479,7 @@ export function News() {
 }
 
 export function Assistant() {
-  const { t, cat, lang, push } = useApp()
+  const { t, cat, lang, push, money } = useApp()
   const [msgs, setMsgs] = useState<{ me?: boolean; text: string; ids?: string[] }[]>([{ text: t.aiHello }])
   const [q, setQ] = useState('')
   const end = useRef<HTMLDivElement>(null)
@@ -380,7 +498,7 @@ export function Assistant() {
         {msgs.map((m, i) => (
           <div key={i} className={'bubble' + (m.me ? ' me' : '')}>
             {m.text}
-            {m.ids && <div className="chat-prods">{m.ids.map((id) => { const p = cat.products.find((x) => x.id === id)!; return <button key={id} onClick={() => push('product', { id })}><img src={'/' + p.images[0]} alt="" /><span>{tx(p.name, lang)}</span><b>{fmt(p.price)} ₸</b></button> })}</div>}
+            {m.ids && <div className="chat-prods">{m.ids.map((id) => { const p = cat.products.find((x) => x.id === id)!; return <button key={id} onClick={() => push('product', { id })}><img src={'/' + p.images[0]} alt="" /><span>{tx(p.name, lang)}</span><b>{money(p.price)}</b></button> })}</div>}
           </div>
         ))}
         <div ref={end} />
@@ -390,10 +508,10 @@ export function Assistant() {
   )
 }
 
-/* ---------- 4 страны JJ Market (Узбекистан, Казахстан, Россия, Кыргызстан) ---------- */
+/* ---------- 4 страны и валюты JJ Market (Узбекистан, Казахстан, Россия, Кыргызстан) ---------- */
 export function Country() {
-  const { t, lang, toast } = useApp()
-  const [sel, setSel] = useState<'UZ' | 'KZ' | 'RU' | 'KG'>('KZ')
+  const { s, set, t, lang, toast } = useApp()
+  const active = countryByCode(s.country)
   return (
     <div className="screen home-screen">
       <TopBar title={t.countryT} />
@@ -401,21 +519,26 @@ export function Country() {
         <div className="ios-sec-lbl">{t.ext.profCountriesTitle}</div>
         <div className="ios-group">
           {COUNTRIES.map((co) => {
-            const on = sel === co.code
+            const on = active.code === co.code
             return (
               <button
                 key={co.code}
                 className="ios-row"
-                onClick={() => { setSel(co.code); toast(`${co.flag} ${co.name[lang]}`) }}
+                onClick={() => {
+                  set((x) => ({ ...x, country: co.code, pay: co.payments[0]?.title ?? x.pay }))
+                  toast(`${co.flag} ${t.ext.currencyChanged(co.name[lang], co.symbol)}`)
+                }}
               >
                 <span className="ir-l">
-                  <span style={{ fontSize: 20 }}>{co.flag}</span>
+                  <span style={{ fontSize: 21 }}>{co.flag}</span>
                   <span>
                     <b>{co.name[lang]}</b>
-                    <small style={{ display: 'block', fontSize: 12, color: '#968fa8' }}>{co.currency} · {co.dial}</small>
+                    <small style={{ display: 'block', fontSize: 12, color: '#968fa8' }}>
+                      {co.currency} · {co.payments[0]?.title}, {co.payments[1]?.title}
+                    </small>
                   </span>
                 </span>
-                {on && <Check size={18} color="#AE33FF" />}
+                {on && <Check size={18} color="#AE33FF" strokeWidth={2.6} />}
               </button>
             )
           })}
@@ -521,5 +644,38 @@ export function Doc({ kind }: { kind: string }) {
   )
 }
 
-export const Reviews = () => { const { t } = useApp(); return <Simple title={t.myReviews} icon={<Star size={26} />} text={t.noReviews} /> }
+export function Reviews() {
+  const { s, t, cat, lang, push } = useApp()
+  const entries = Object.entries(s.userReviews).flatMap(([pid, list]) => {
+    const prod = cat.products.find((p) => p.id === pid)
+    return list.map((r) => ({ r, prod }))
+  })
+  return (
+    <div className="screen home-screen">
+      <TopBar title={t.myReviews} />
+      <div className="scroll">
+        {entries.length === 0 ? (
+          <Empty icon={<Star size={26} />} title={t.noReviews} />
+        ) : (
+          <div className="rev-list" style={{ marginTop: 8 }}>
+            {entries.map(({ r, prod }) => (
+              <div className="rev-card" key={r.id} onClick={() => prod && push('product', { id: prod.id })}>
+                <div className="rev-head">
+                  <b>{prod ? tx(prod.name, lang) : r.author}</b>
+                  <span className="rev-stars">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <Star key={n} size={12} fill={n <= r.rating ? '#F59E0B' : 'none'} color={n <= r.rating ? '#F59E0B' : '#D1D5DB'} />
+                    ))}
+                  </span>
+                </div>
+                <p>{r.text}</p>
+                <small>{r.date}</small>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 export { ChevronLeft }

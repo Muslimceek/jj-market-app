@@ -1,0 +1,419 @@
+/* ==========================================================================
+   JJ MARKET MOTION GRAPHICS & PRO FEATURES (v2)
+   Официальная палитра: #AE33FF · #484848 · #FFFFFF
+   ========================================================================== */
+
+@keyframes priceMorph {
+  0% { opacity: .45; transform: translateY(3px) scale(.97); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes qrLaser {
+  0%, 100% { top: 8px; opacity: .9; }
+  50% { top: calc(100% - 10px); opacity: 1; }
+}
+@keyframes followBurst {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+@keyframes fitFill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes tabBounce {
+  0% { transform: scale(.86); }
+  55% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+@keyframes heroSheen {
+  0%, 64% { transform: translateX(-130%); }
+  100% { transform: translateX(130%); }
+}
+
+.price-morph { display: inline-block; animation: priceMorph .28s cubic-bezier(.22, 1, .36, 1); }
+
+/* 1. Живая кнопка валюты и шторка стран/валют */
+.jj-curr-btn {
+  flex: none; height: 32px; padding: 0 8px; border-radius: 10px;
+  background: var(--p-tint); border: 1px solid rgba(174, 51, 255, .2);
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11.8px; font-weight: 800; color: var(--p-deep);
+  transition: transform .14s, background .16s;
+}
+.jj-curr-btn:active { transform: scale(.93); background: var(--p-soft); }
+
+.curr-list { display: flex; flex-direction: column; gap: 8px; }
+.curr-opt {
+  width: 100%; display: flex; align-items: center; gap: 11px; text-align: left;
+  padding: 11px 12px; border-radius: 15px;
+  background: var(--bg); border: 1.5px solid transparent;
+  transition: border-color .18s, background .18s, transform .12s;
+}
+.curr-opt:active { transform: scale(.985); }
+.curr-opt.on { background: var(--p-tint); border-color: var(--p); }
+.co-flag-lg { font-size: 24px; line-height: 1; flex: none; }
+.co-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.co-meta b { font-size: 14.5px; font-weight: 800; color: var(--ink); }
+.co-meta small { font-size: 11.5px; color: var(--ink3); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-sym {
+  padding: 4px 9px; border-radius: 9px; background: #fff; border: 1px solid var(--line);
+  font-size: 12px; font-weight: 800; color: var(--ink2); flex: none;
+}
+.co-sym.on { background: var(--p); color: #fff; border-color: var(--p); }
+
+/* 2. Улучшенная мини-галерея в карточках ленты + плавный свайп */
+.gal-dots {
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  padding: 3px 6px; border-radius: 999px;
+  background: rgba(34, 34, 38, .28); backdrop-filter: blur(6px);
+}
+.gal-dots button {
+  width: 5px; height: 5px; border-radius: 999px; padding: 0;
+  background: rgba(255, 255, 255, .62);
+  transition: width .24s cubic-bezier(.22, 1, .36, 1), background .2s;
+}
+.gal-dots button.on { width: 15px; background: #fff; }
+.gal-slide { background: linear-gradient(110deg, #F3F2F7 25%, #FAF9FC 45%, #F3F2F7 65%); background-size: 200% 100%; }
+
+/* 3. Дополнительная моушн-графика на Главной (блик на баннерах, пружинка таббара, лента «Недавно смотрели») */
+.hero-card { position: relative; overflow: hidden; }
+.hero-card::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(112deg, transparent 34%, rgba(255, 255, 255, .18) 50%, transparent 66%);
+  transform: translateX(-130%); animation: heroSheen 5.2s ease-in-out infinite;
+}
+.tabbar button.on .tb-ic { animation: tabBounce .34s cubic-bezier(.22, 1.4, .36, 1); }
+
+.recent-sec { margin: 4px 0 10px; }
+.recent-strip {
+  display: flex; gap: 9px; overflow-x: auto; scrollbar-width: none;
+  padding: 2px 2px 6px;
+}
+.recent-strip::-webkit-scrollbar { display: none; }
+.recent-card {
+  flex: none; width: 116px; border-radius: 16px; overflow: hidden; text-align: left;
+  background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+  animation: jjaPop .32s cubic-bezier(.22, 1, .36, 1) both;
+  transition: transform .14s;
+}
+.recent-card:active { transform: scale(.96); }
+.rc-media { position: relative; height: 112px; background: var(--bg); overflow: hidden; }
+.rc-media img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.rc-media em {
+  position: absolute; top: 6px; left: 6px; font-style: normal;
+  padding: 2px 6px; border-radius: 6px; background: var(--ruby); color: #fff;
+  font-size: 10px; font-weight: 800;
+}
+.rc-info { padding: 7px 8px 9px; display: flex; flex-direction: column; gap: 2px; }
+.rc-info b { font-size: 11.5px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-info span { font-size: 12.5px; font-weight: 800; color: var(--p); }
+
+/* 4. Умный поиск (история, тренды, мгновенные совпадения) */
+.s-block { margin: 10px 0 14px; }
+.s-bh {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-bottom: 8px;
+}
+.s-bh b { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 800; color: var(--ink); }
+.s-bh button { font-size: 12px; font-weight: 700; color: var(--p); }
+.s-bh small { font-size: 12px; color: var(--ink3); font-weight: 600; }
+
+.s-hist-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.s-hist-chip {
+  display: inline-flex; align-items: center; gap: 2px;
+  background: #fff; border: 1px solid var(--line); border-radius: 999px;
+  padding: 0 5px 0 12px; height: 32px; box-shadow: var(--shadow-sm);
+}
+.s-hist-chip > button:first-child { font-size: 12.5px; font-weight: 600; color: var(--ink2); }
+.shc-x { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: var(--ink3); }
+.chip.trend {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--p-tint); border-color: rgba(174, 51, 255, .22); color: var(--p-deep); font-weight: 700;
+}
+
+.s-instant-card {
+  background: #fff; border: 1px solid var(--line); border-radius: 18px;
+  padding: 11px 12px 6px; margin: 4px 0 14px; box-shadow: var(--shadow-sm);
+  animation: jjaPop .24s ease;
+}
+.s-inst-row {
+  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
+  padding: 8px 2px; border-top: 1px solid var(--line);
+}
+.s-inst-row:first-of-type { border-top: 0; }
+.s-inst-row img { width: 42px; height: 46px; border-radius: 9px; object-fit: cover; object-position: top; flex: none; background: var(--bg); }
+.sir-txt { flex: 1; min-width: 0; }
+.sir-txt b { display: block; font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sir-txt small { display: block; font-size: 11.2px; color: var(--ink3); margin-top: 2px; }
+.sir-price { text-align: right; flex: none; }
+.sir-price b { display: block; font-size: 13px; font-weight: 800; color: var(--p); }
+.sir-price em { font-style: normal; font-size: 10px; font-weight: 800; color: var(--ruby); }
+
+/* 5. Отдельный Checkout + локальные способы оплаты + OrderOk с пульсацией */
+.co-scroll { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
+.co-scroll > *, .od-scroll > * { flex: none; }
+.chk-card {
+  background: #fff; border: 1px solid var(--line); border-radius: 18px;
+  padding: 13px; box-shadow: var(--shadow-sm);
+}
+.co-sec-h {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 10px;
+}
+.co-sec-h b { font-size: 14px; font-weight: 800; color: var(--ink); }
+.co-country-tag {
+  margin-left: auto; font-size: 11px; font-weight: 700; color: var(--p-deep);
+  background: var(--p-soft); padding: 3px 8px; border-radius: 999px;
+}
+.co-recip b { display: block; font-size: 14.5px; font-weight: 700; color: var(--ink); }
+.co-recip small { display: block; font-size: 12.5px; color: var(--ink3); margin-top: 2px; }
+
+.pay-grid.local { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.pay-card.rich {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left;
+  padding: 11px; border-radius: 15px; background: var(--bg);
+  border: 1.5px solid transparent; transition: all .18s;
+}
+.pay-card.rich.on { background: var(--p-tint); border-color: var(--p); box-shadow: 0 5px 14px rgba(174, 51, 255, .14); }
+.pay-card.rich .pc-top { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 5px; }
+.pay-card.rich .pc-top-r { display: inline-flex; align-items: center; gap: 5px; }
+.pay-card.rich .pc-chk { position: static; width: 18px; height: 18px; flex: none; }
+.pay-card.rich b { font-size: 13px; font-weight: 800; color: var(--ink); padding-right: 0; }
+.pay-card.rich small { font-size: 10.8px; color: var(--ink3); line-height: 1.25; }
+.pc-badge-top {
+  font-style: normal; font-size: 9.5px; font-weight: 800;
+  padding: 2px 6px; border-radius: 6px; background: var(--p); color: #fff;
+}
+
+.co-thumbs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.co-thumb { position: relative; width: 54px; height: 60px; border-radius: 11px; overflow: hidden; flex: none; background: var(--bg); }
+.co-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.co-thumb em {
+  position: absolute; right: 3px; bottom: 3px; font-style: normal;
+  background: rgba(34, 34, 38, .82); color: #fff; font-size: 10px; font-weight: 800;
+  padding: 1px 5px; border-radius: 6px;
+}
+.co-foot {
+  flex: none; padding: 10px 14px 22px; background: #fff;
+  border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgba(34, 34, 38, .05);
+}
+
+.ok-emblem { position: relative; width: 106px; height: 106px; display: grid; place-items: center; margin-bottom: 10px; }
+.ok-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid rgba(174, 51, 255, .36);
+  animation: jjaRadar 2s ease-out infinite;
+}
+.ok-ring.r2 { animation-delay: .8s; }
+
+/* 6. Трекер доставки заказа + QR-код ПВЗ с лазерной анимацией */
+.od-scroll { display: flex; flex-direction: column; gap: 11px; padding-top: 8px; }
+.od-track-card {
+  background: #fff; border: 1px solid var(--line); border-radius: 20px;
+  padding: 14px; box-shadow: var(--shadow-sm);
+}
+.od-tc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.od-tc-top small { display: block; font-size: 12px; color: var(--ink3); margin-top: 4px; }
+.od-tc-ic {
+  width: 40px; height: 40px; border-radius: 13px;
+  background: var(--p-soft); color: var(--p); display: grid; place-items: center;
+}
+.od-live-route { position: relative; margin: 16px 0 14px; }
+.od-lr-line {
+  position: absolute; top: 10px; left: 15%; right: 15%;
+  height: 3.5px; border-radius: 3px; background: var(--bg2); overflow: hidden;
+}
+.od-lr-line i {
+  display: block; height: 100%; background: var(--p); border-radius: 3px;
+  transition: width .5s cubic-bezier(.22, 1, .36, 1);
+}
+.od-lr-steps {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); text-align: center;
+}
+.od-lr-steps span {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  font-size: 11.2px; font-weight: 700; color: var(--ink3);
+}
+.od-lr-steps span i {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--bg2);
+  display: grid; place-items: center; color: #fff;
+}
+.od-lr-steps span.done { color: var(--ink); }
+.od-lr-steps span.done i { background: var(--green); border-color: var(--green); }
+.od-lr-steps span.now { color: var(--p-deep); }
+.od-lr-steps span.now i { background: var(--p); border-color: #fff; animation: jjaPulseDot 1.8s infinite; }
+
+.od-addr-row {
+  display: flex; align-items: center; gap: 7px; padding-top: 10px;
+  border-top: 1px solid var(--line); font-size: 12.8px; font-weight: 600; color: var(--ink2);
+}
+
+.od-qr-card {
+  background: linear-gradient(145deg, #FFFFFF 0%, #FAF5FF 100%);
+  border: 1.5px solid rgba(174, 51, 255, .24);
+  border-radius: 20px; padding: 14px;
+  box-shadow: 0 8px 22px rgba(174, 51, 255, .09);
+}
+.od-qr-head { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px; }
+.od-qr-head b { display: block; font-size: 14px; font-weight: 800; color: var(--ink); }
+.od-qr-head small { display: block; font-size: 11.8px; color: var(--ink2); margin-top: 2px; }
+.od-qr-box { display: flex; align-items: center; gap: 14px; }
+.od-qr-frame {
+  position: relative; width: 116px; height: 116px; flex: none;
+  padding: 10px; border-radius: 16px; background: #fff;
+  border: 1px solid rgba(174, 51, 255, .2); box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.qr-svg { width: 100%; height: 100%; display: block; }
+.od-qr-laser {
+  position: absolute; left: 8px; right: 8px; height: 2.5px; border-radius: 2px;
+  background: var(--p); box-shadow: 0 0 10px rgba(174, 51, 255, .85);
+  animation: qrLaser 2.2s ease-in-out infinite;
+}
+.od-qr-code-info { flex: 1; min-width: 0; }
+.od-qr-code-info small { display: block; font-size: 11.5px; font-weight: 700; color: var(--ink3); }
+.od-qr-code-info strong {
+  display: block; font-size: 26px; font-weight: 800; letter-spacing: .6px;
+  color: var(--ink); margin: 3px 0 9px; font-variant-numeric: tabular-nums;
+}
+.od-copy-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 12px; border-radius: 10px;
+  background: var(--p); color: #fff; font-size: 12.2px; font-weight: 700;
+  box-shadow: 0 4px 12px rgba(174, 51, 255, .28);
+}
+.od-copy-btn:active { transform: scale(.96); }
+
+/* 7. Отзывы с параметрами посадки (Trendyol-grade) */
+.fit-card {
+  margin-top: 12px; padding: 12px; border-radius: 15px;
+  background: var(--bg); border: 1px solid var(--line);
+}
+.fit-h { font-size: 12.5px; font-weight: 800; color: var(--ink); margin-bottom: 9px; }
+.fit-row {
+  display: grid; grid-template-columns: 92px 1fr 34px; align-items: center; gap: 8px;
+  font-size: 11.8px; color: var(--ink2); margin-bottom: 6px;
+}
+.fit-row:last-child { margin-bottom: 0; }
+.fit-row.hi { color: var(--ink); font-weight: 700; }
+.fit-row b { text-align: right; font-variant-numeric: tabular-nums; }
+.fit-bar { height: 6px; border-radius: 3px; background: #E7E6EE; overflow: hidden; }
+.fit-bar i {
+  display: block; height: 100%; border-radius: 3px; background: #B8B5C4;
+  transform-origin: left; animation: fitFill .6s cubic-bezier(.22, 1, .36, 1) both;
+}
+.fit-row.hi .fit-bar i { background: var(--p); }
+
+.rev-list { display: flex; flex-direction: column; gap: 9px; margin-top: 12px; }
+.rev-card {
+  padding: 12px; border-radius: 15px; background: var(--bg); border: 1px solid var(--line);
+}
+.rev-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.rev-author { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rev-author b { font-size: 13.5px; font-weight: 800; color: var(--ink); }
+.rev-ver { display: inline-flex; align-items: center; gap: 3px; font-size: 10.8px; font-weight: 700; color: #15803D; }
+.rev-stars { display: inline-flex; gap: 2px; flex: none; }
+.rev-meta-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+.rev-meta-chips span {
+  padding: 2.5px 7.5px; border-radius: 7px; background: #fff; border: 1px solid var(--line);
+  font-size: 11px; font-weight: 700; color: var(--ink2);
+}
+.rev-meta-chips span.fit-tag { background: var(--p-soft); border-color: rgba(174, 51, 255, .2); color: var(--p-deep); }
+.rev-card p { margin: 0; font-size: 13.2px; line-height: 1.48; color: var(--ink); }
+.rev-card small { display: block; margin-top: 6px; font-size: 11px; color: var(--ink3); }
+
+.wr-stars { display: flex; justify-content: center; gap: 10px; margin: 4px 0 14px; }
+.wr-stars button { transition: transform .14s; }
+.wr-stars button:active { transform: scale(1.2); }
+.wr-fit-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 12px; }
+.wr-fit {
+  height: 36px; border-radius: 11px; background: var(--bg); border: 1.5px solid var(--line);
+  font-size: 12px; font-weight: 700; color: var(--ink2);
+}
+.wr-fit.on { background: var(--p-tint); border-color: var(--p); color: var(--p-deep); }
+.wr-params { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 11px; }
+.wr-params label { display: flex; flex-direction: column; gap: 4px; }
+.wr-params span { font-size: 11px; font-weight: 700; color: var(--ink3); }
+.wr-params input {
+  height: 40px; border-radius: 11px; border: 1.5px solid var(--line); background: var(--bg);
+  padding: 0 10px; font-size: 13.5px; font-weight: 600; min-width: 0; width: 100%;
+}
+.wr-params input:focus { border-color: var(--p); background: #fff; }
+.wr-text {
+  width: 100%; border-radius: 13px; border: 1.5px solid var(--line); background: var(--bg);
+  padding: 11px 12px; font-size: 14px; resize: none; outline: none; margin-bottom: 12px;
+}
+.wr-text:focus { border-color: var(--p); background: #fff; }
+
+/* 8. Витрина магазина продавца (SellerStore) */
+.ss-hero {
+  position: relative; flex: none; padding: 6px 16px 22px; overflow: hidden;
+  background: linear-gradient(156deg, #521192 0%, #7C18CE 58%, #AE33FF 100%);
+  color: #fff;
+}
+.ss-top {
+  position: relative; z-index: 3;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-bottom: 12px;
+}
+.ss-official {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .24);
+  font-size: 11px; font-weight: 700; color: #fff;
+}
+.ss-chat-ic {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .24);
+  color: #fff; display: grid; place-items: center;
+}
+.ss-card {
+  position: relative; z-index: 2; overflow: hidden;
+  background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .26);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-radius: 20px; padding: 13px;
+}
+.ss-id-row { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; }
+.ss-av {
+  position: relative; width: 48px; height: 48px; border-radius: 15px; flex: none;
+  background: #fff; color: var(--p); display: grid; place-items: center;
+  box-shadow: 0 8px 18px rgba(34, 8, 66, .24);
+}
+.ss-av i {
+  position: absolute; right: -2px; bottom: -2px; width: 12px; height: 12px; border-radius: 50%;
+  background: #4ADE80; border: 2px solid #fff;
+}
+.ss-meta { flex: 1; min-width: 0; }
+.ss-meta h1 { margin: 0; font-size: 18px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ss-stats {
+  display: flex; align-items: center; gap: 6px; margin-top: 3px;
+  font-size: 12px; color: rgba(255, 255, 255, .86);
+}
+.ss-stats span { display: inline-flex; align-items: center; gap: 4px; }
+.ss-stats em { font-style: normal; opacity: .55; }
+.ss-btns { display: grid; grid-template-columns: 1.15fr 1fr; gap: 8px; }
+.ss-follow-btn, .ss-msg-btn {
+  height: 38px; border-radius: 12px; font-size: 12.8px; font-weight: 800;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: transform .14s, background .18s;
+}
+.ss-follow-btn { background: #fff; color: #6B14B8; box-shadow: 0 6px 14px rgba(34, 8, 66, .18); }
+.ss-follow-btn.on { background: rgba(74, 222, 128, .26); color: #C2FDDD; border: 1px solid rgba(155, 248, 196, .48); box-shadow: none; }
+.ss-follow-btn.burst { animation: followBurst .36s cubic-bezier(.22, 1.4, .36, 1); }
+.ss-msg-btn { background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .28); color: #fff; }
+.ss-follow-btn:active, .ss-msg-btn:active { transform: scale(.96); }
+
+.ss-scroll {
+  position: relative; z-index: 3; margin-top: -12px;
+  border-radius: 22px 22px 0 0; background: var(--bg); padding-top: 12px;
+}
+.ss-filter-bar { margin-bottom: 8px; }
+.ss-tabs { display: flex; gap: 7px; overflow-x: auto; scrollbar-width: none; }
+.ss-tabs button {
+  flex: none; height: 34px; padding: 0 12px; border-radius: 11px;
+  background: #fff; border: 1px solid var(--line); color: var(--ink2);
+  display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700;
+}
+.ss-tabs button.on { background: var(--p); border-color: var(--p); color: #fff; }
+.ss-count { font-size: 12px; font-weight: 700; color: var(--ink3); margin: 2px 2px 10px; }

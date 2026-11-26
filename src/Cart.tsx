@@ -1,19 +1,22 @@
 import { useMemo, useState } from 'react'
 import {
   ChevronRight, Heart, CreditCard, ShoppingCart, Check, PartyPopper, Trash2,
-  MapPin, Store, Tag, Sparkles, RotateCcw, Smartphone, Wallet, ShieldCheck, SlidersHorizontal,
+  MapPin, Store, Tag, Sparkles, RotateCcw, Smartphone, Wallet, ShieldCheck,
+  SlidersHorizontal, ArrowRight, Zap, User as UserIc, Loader2, QrCode,
 } from 'lucide-react'
-import { useApp, tx, fmt, sizeAxis } from './store'
-import { Sheet, Stepper, QuickSizeSheet, HScroll, SectionHead } from './ui'
+import { useApp, tx, sizeAxis } from './store'
+import { Sheet, Stepper, QuickSizeSheet, HScroll, SectionHead, TopBar, CurrencySheet } from './ui'
 import { AddressSheet, addrMeta } from './Home'
+import { countryByCode, type LocalPayment } from './geo'
 
 export function PaySheet() {
   const { t, s, set, sheet } = useApp()
+  const co = countryByCode(s.country)
   return (
     <Sheet title={t.payMethod}>
-      {t.pays.map((p) => (
-        <button key={p} className="radio-row" onClick={() => { set((x) => ({ ...x, pay: p })); sheet(null) }}>
-          <span className="opt-l"><CreditCard size={18} />{p}</span><span className={'radio' + (s.pay === p ? ' on' : '')} />
+      {co.payments.map((p) => (
+        <button key={p.id} className="radio-row" onClick={() => { set((x) => ({ ...x, pay: p.title })); sheet(null) }}>
+          <span className="opt-l"><CreditCard size={18} />{p.title}</span><span className={'radio' + (s.pay === p.title ? ' on' : '')} />
         </button>
       ))}
     </Sheet>
@@ -22,9 +25,16 @@ export function PaySheet() {
 
 const FREE_SHIP_THRESHOLD = 15000
 
-/* ---------- КОРЗИНА С НУЛЯ: Apple-дизайн + выгода + промокод + undo + смена размера ---------- */
+function payIconOf(kind: LocalPayment['kind']) {
+  if (kind === 'wallet') return Wallet
+  if (kind === 'fast') return Zap
+  if (kind === 'phone') return Smartphone
+  return CreditCard
+}
+
+/* ---------- 1. КОРЗИНА (чистая, без перегруза оплатой) → переход в отдельный Checkout ---------- */
 export function Cart() {
-  const { s, set, t, lang, cat, sheet, toast, push, tab, requireLogin } = useApp()
+  const { s, set, t, lang, cat, sheet, toast, push, tab, requireLogin, money } = useApp()
   const ext = t.ext
   const [promoInput, setPromoInput] = useState('')
   const [promoApplied, setPromoApplied] = useState<string | null>(null)
@@ -58,7 +68,6 @@ export function Cart() {
   const shipProgress = Math.min(100, Math.round((finalSum / FREE_SHIP_THRESHOLD) * 100))
   const shipNeed = Math.max(0, FREE_SHIP_THRESHOLD - finalSum)
 
-  // Подборка «С этим часто берут»
   const crossSell = useMemo(() => {
     const inCartIds = new Set(s.cart.map((c) => c.productId))
     return cat.products
@@ -70,7 +79,6 @@ export function Cart() {
   const upd = (key: string, fn: (l: (typeof s.cart)[number]) => (typeof s.cart)[number] | null) =>
     set((x) => ({ ...x, cart: x.cart.map((l) => (l.key === key ? fn(l) : l)).filter(Boolean) as typeof x.cart }))
 
-  // Удаление с возможностью мгновенно отменить (Undo — решает боль WB/Ozon!)
   const removeWithUndo = (line: (typeof s.cart)[number]) => {
     set((x) => ({ ...x, cart: x.cart.filter((c) => c.key !== line.key) }))
     toast(
@@ -99,29 +107,11 @@ export function Cart() {
     }
   }
 
-  const order = () => {
-    if (!requireLogin()) return
+  const goCheckout = () => {
     if (!sel.length) return toast(t.needSelect)
-    if (!addr) { toast(t.needAddress); sheet(<AddressSheet />); return }
-    const payMethod = s.pay ?? t.pays[0]
-    const id = String(Math.floor(100000000 + Math.random() * 899999999))
-    const now = new Date()
-    set((x) => ({
-      ...x,
-      pay: payMethod,
-      orders: [{
-        id, date: now.toISOString(), total: finalSum, address: addr.full, pay: payMethod, status: 0,
-        lines: sel.map(({ l, p }) => ({
-          productId: p.id, label: l.label, qty: l.qty,
-          price: p.variants.find((v) => v.id === l.variantId)?.price || p.price,
-        })),
-      }, ...x.orders],
-      cart: x.cart.filter((l) => !l.selected),
-    }))
-    push('orderOk', { id })
+    if (!requireLogin()) return
+    push('checkout', { promo: promoApplied })
   }
-
-  const payIcons = [Wallet, CreditCard, Smartphone, Smartphone]
 
   return (
     <div className="screen home-screen">
@@ -158,12 +148,12 @@ export function Cart() {
             <div className={'ship-bar-card' + (shipNeed === 0 ? ' ok' : '')}>
               <div className="sb-top">
                 <ShieldCheck size={16} color={shipNeed === 0 ? '#16a34a' : '#AE33FF'} />
-                <span>{shipNeed === 0 ? ext.cartFreeShipOk : ext.cartFreeShipNeed(fmt(shipNeed))}</span>
+                <span>{shipNeed === 0 ? ext.cartFreeShipOk : ext.cartFreeShipNeed(money(shipNeed).replace(/\s*[^\d\s]+$/, ''))}</span>
               </div>
               <div className="sb-track"><i style={{ width: `${shipProgress}%` }} /></div>
             </div>
 
-            {/* 2. Карточка адреса доставки */}
+            {/* 2. Адрес доставки */}
             <button className="cart-addr-card" onClick={() => sheet(<AddressSheet />)}>
               <span className="cac-ic">{addr?.isPickup ? <Store size={17} /> : <MapPin size={17} />}</span>
               <div className="cac-txt">
@@ -174,7 +164,7 @@ export function Cart() {
               <ChevronRight size={16} color="#968fa8" />
             </button>
 
-            {/* 3. Панель «Выбрать все / Удалить выбранные» */}
+            {/* 3. Выбрать все / Удалить выбранные */}
             <div className="cart-select-bar">
               <label className="cb-row">
                 <input type="checkbox" checked={allSel} onChange={() => set((x) => ({ ...x, cart: x.cart.map((l) => ({ ...l, selected: !allSel })) }))} />
@@ -188,7 +178,7 @@ export function Cart() {
               )}
             </div>
 
-            {/* 4. Список товаров в отдельных аккуратных Apple-карточках */}
+            {/* 4. Товары */}
             <div className="cart-cards">
               {lines.map(({ l, p }) => {
                 const price = p.variants.find((v) => v.id === l.variantId)?.price || p.price
@@ -203,18 +193,17 @@ export function Cart() {
                         <span className="cb">{l.selected && <Check size={13} strokeWidth={3} />}</span>
                       </label>
                       <div className="cc-img-wrap" onClick={() => push('product', { id: p.id })}>
-                        <img src={'/' + p.images[0]} alt="" />
+                        <img src={'/' + p.images[0]} loading="lazy" alt="" />
                         {p.pct > 0 && <em>-{p.pct}%</em>}
                       </div>
                       <div className="cc-body">
                         <div className="cc-price-row">
-                          <b>{fmt(price * l.qty)} ₸</b>
-                          {p.old > price && <s>{fmt(p.old * l.qty)} ₸</s>}
+                          <b>{money(price * l.qty)}</b>
+                          {p.old > price && <s>{money(p.old * l.qty)}</s>}
                         </div>
                         <div className="cc-brand">{p.brand || p.seller}</div>
                         <div className="cc-name" onClick={() => push('product', { id: p.id })}>{tx(p.name, lang)}</div>
 
-                        {/* Кнопка смены размера/цвета прямо в корзине */}
                         {(l.label || hasSizes) && (
                           <button className="cc-var-pill" onClick={() => sheet(<QuickSizeSheet p={p} onReplaceKey={l.key} />)}>
                             <span>{l.label || ext.cartChangeVar}</span>
@@ -244,7 +233,7 @@ export function Cart() {
               })}
             </div>
 
-            {/* 5. Промокод (рабочий: JJ10 / WELCOME) */}
+            {/* 5. Промокод */}
             <div className="promo-card">
               <div className={'promo-row' + (promoErr ? ' err' : '')}>
                 <Tag size={16} color="#AE33FF" />
@@ -262,84 +251,211 @@ export function Cart() {
               </div>
               {!promoApplied && (
                 <button className="promo-hint" onClick={() => applyPromo('JJ10')}>
-                  <Sparkles size={12} />Нажмите, чтобы применить <b>JJ10</b> (−10%)
+                  <Sparkles size={12} />JJ10 (−10%)
                 </button>
               )}
             </div>
 
-            {/* 6. Способ оплаты — визуальные Apple-карточки прямо на экране */}
-            <div className="pay-section">
-              <div className="ps-title">{t.payMethod}</div>
-              <div className="pay-grid">
-                {t.pays.map((pm, idx) => {
-                  const active = (s.pay ?? t.pays[0]) === pm
-                  const Ic = payIcons[idx] ?? CreditCard
-                  return (
-                    <button key={pm} className={'pay-card' + (active ? ' on' : '')} onClick={() => set((x) => ({ ...x, pay: pm }))}>
-                      <span className="pc-ic"><Ic size={17} /></span>
-                      <b>{pm}</b>
-                      {active && <span className="pc-chk"><Check size={12} strokeWidth={3} /></span>}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* 7. Прозрачная детализация суммы и выгоды */}
+            {/* 6. Итого */}
             <div className="summary-card">
-              <div className="sum-row">
-                <span>{t.products} ({selQty})</span>
-                <b>{fmt(rawOldSum)} ₸</b>
-              </div>
-              {itemSavings > 0 && (
-                <div className="sum-row green">
-                  <span>{ext.cartSavings}</span>
-                  <b>−{fmt(itemSavings)} ₸</b>
-                </div>
-              )}
-              {promoCut > 0 && (
-                <div className="sum-row green">
-                  <span>{ext.promoDiscount} ({promoApplied})</span>
-                  <b>−{fmt(promoCut)} ₸</b>
-                </div>
-              )}
-              <div className="sum-row">
-                <span>{t.delivery}</span>
-                <b className="green-txt">{shipNeed === 0 ? '0 ₸' : '0 ₸'}</b>
-              </div>
+              <div className="sum-row"><span>{t.products} ({selQty})</span><b>{money(rawOldSum)}</b></div>
+              {itemSavings > 0 && <div className="sum-row green"><span>{ext.cartSavings}</span><b>−{money(itemSavings)}</b></div>}
+              {promoCut > 0 && <div className="sum-row green"><span>{ext.promoDiscount} ({promoApplied})</span><b>−{money(promoCut)}</b></div>}
+              <div className="sum-row"><span>{t.delivery}</span><b className="green-txt">{money(0)}</b></div>
               <div className="sum-divider" />
-              <div className="sum-total">
-                <span>{t.toPay}</span>
-                <b>{fmt(finalSum)} ₸</b>
-              </div>
+              <div className="sum-total"><span>{t.toPay}</span><b>{money(finalSum)}</b></div>
             </div>
 
-            {/* 8. С этим часто берут */}
+            {/* 7. С этим часто берут */}
             {crossSell.length > 0 && (
               <>
                 <SectionHead title={ext.cartAlsoBuy} />
                 <HScroll items={crossSell} />
               </>
             )}
-
             <div style={{ height: 18 }} />
           </div>
 
-          {/* Липкий футер оформления заказа */}
           <div className="cart-checkout-bar">
             <div className="ccb-info">
-              <b>{fmt(finalSum)} ₸</b>
+              <b>{money(finalSum)}</b>
               <small>
                 {selQty} {t.pcs}
-                {totalSavings > 0 && <span className="ccb-save"> · −{fmt(totalSavings)} ₸</span>}
+                {totalSavings > 0 && <span className="ccb-save"> · −{money(totalSavings)}</span>}
               </small>
             </div>
-            <button className={'btn' + (sel.length ? '' : ' dis')} onClick={order}>
-              {t.placeOrder}
+            <button className={'btn' + (sel.length ? '' : ' dis')} onClick={goCheckout}>
+              <span>{ext.goCheckout}</span>
+              <ArrowRight size={16} />
             </button>
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+/* ---------- 2. ОТДЕЛЬНЫЙ ЭКРАН ОФОРМЛЕНИЯ ЗАКАЗА (Checkout с локальной оплатой по стране) ---------- */
+export function Checkout({ promo }: { promo?: string | null }) {
+  const { s, set, t, lang, cat, sheet, toast, push, pop, money } = useApp()
+  const ext = t.ext
+  const co = countryByCode(s.country)
+  const [paying, setPaying] = useState(false)
+
+  const sel = s.cart
+    .filter((l) => l.selected)
+    .map((l) => ({ l, p: cat.products.find((p) => p.id === l.productId) }))
+    .filter((x): x is { l: (typeof s.cart)[number]; p: NonNullable<typeof x.p> } => !!x.p)
+
+  const selQty = sel.reduce((a, { l }) => a + l.qty, 0)
+  const rawOldSum = sel.reduce((a, { l, p }) => {
+    const curPrice = p.variants.find((v) => v.id === l.variantId)?.price || p.price
+    return a + Math.max(curPrice, p.old || 0) * l.qty
+  }, 0)
+  const subSum = sel.reduce((a, { l, p }) => a + (p.variants.find((v) => v.id === l.variantId)?.price || p.price) * l.qty, 0)
+  const itemSavings = Math.max(0, rawOldSum - subSum)
+  const promoCut = promo ? Math.round(subSum * 0.1) : 0
+  const finalSum = Math.max(0, subSum - promoCut)
+  const addr = addrMeta(s)
+
+  const activePay = co.payments.some((x) => x.title === s.pay) ? s.pay! : co.payments[0].title
+
+  const submitPay = () => {
+    if (!sel.length || paying) return
+    if (!addr) { toast(t.needAddress); sheet(<AddressSheet />); return }
+    setPaying(true)
+    window.setTimeout(() => {
+      const id = String(Math.floor(100000 + Math.random() * 899999))
+      const now = new Date()
+      set((x) => ({
+        ...x,
+        pay: activePay,
+        orders: [{
+          id, date: now.toISOString(), total: finalSum, address: addr.full, pay: activePay, status: 0,
+          lines: sel.map(({ l, p }) => ({
+            productId: p.id, label: l.label, qty: l.qty,
+            price: p.variants.find((v) => v.id === l.variantId)?.price || p.price,
+          })),
+        }, ...x.orders],
+        cart: x.cart.filter((l) => !l.selected),
+      }))
+      push('orderOk', { id })
+    }, 760)
+  }
+
+  if (!sel.length) {
+    return (
+      <div className="screen home-screen">
+        <TopBar title={ext.checkoutTitle} onBack={pop} />
+        <div className="scroll">
+          <div className="fav-empty-card">
+            <h2>{t.cartEmpty}</h2>
+            <button className="btn small" onClick={pop}>{t.back}</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="screen home-screen">
+      <TopBar
+        title={ext.checkoutTitle}
+        right={
+          <button className="jj-curr-btn" onClick={() => sheet(<CurrencySheet />)}>
+            <span>{co.flag}</span><b>{co.symbol}</b>
+          </button>
+        }
+      />
+
+      <div className="scroll co-scroll">
+        {/* 1. Адрес и способ получения */}
+        <button className="cart-addr-card" onClick={() => sheet(<AddressSheet />)}>
+          <span className="cac-ic">{addr?.isPickup ? <Store size={17} /> : <MapPin size={17} />}</span>
+          <div className="cac-txt">
+            <small>{addr ? (addr.isPickup ? t.homeUI.pickupPoint : addr.title) : t.homeUI.deliverTo}</small>
+            <b>{addr ? addr.full : t.chooseAddress}</b>
+          </div>
+          <span className="cac-act">{t.homeUI.changeBtn}</span>
+          <ChevronRight size={16} color="#968fa8" />
+        </button>
+
+        {/* 2. Получатель */}
+        <div className="chk-card">
+          <div className="co-sec-h"><UserIc size={15} color="#AE33FF" /><b>{ext.recipientLbl}</b></div>
+          <div className="co-recip">
+            <b>{s.user ? `${s.user.first} ${s.user.last}`.trim() : 'Покупатель JJ'}</b>
+            <small>{s.user?.phone || s.user?.email || `${co.dial} 700 000-00-00`}</small>
+          </div>
+        </div>
+
+        {/* 3. Локальные способы оплаты выбранной страны */}
+        <div className="chk-card">
+          <div className="co-sec-h">
+            <CreditCard size={15} color="#AE33FF" />
+            <b>{t.payMethod}</b>
+            <span className="co-country-tag">{co.flag} {co.name[lang]}</span>
+          </div>
+          <div className="pay-grid local">
+            {co.payments.map((pm) => {
+              const active = activePay === pm.title
+              const Ic = payIconOf(pm.kind)
+              return (
+                <button
+                  key={pm.id}
+                  type="button"
+                  className={'pay-card rich' + (active ? ' on' : '')}
+                  onClick={() => set((x) => ({ ...x, pay: pm.title }))}
+                >
+                  <div className="pc-top">
+                    <span className="pc-ic"><Ic size={16} /></span>
+                    <span className="pc-top-r">
+                      {pm.badge && <em className="pc-badge-top">{pm.badge}</em>}
+                      {active && <span className="pc-chk"><Check size={11} strokeWidth={3} /></span>}
+                    </span>
+                  </div>
+                  <b>{pm.title}</b>
+                  <small>{pm.sub}</small>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 4. Состав заказа */}
+        <div className="chk-card">
+          <div className="co-sec-h"><ShoppingCart size={15} color="#AE33FF" /><b>{ext.orderItemsLbl} ({selQty})</b></div>
+          <div className="co-thumbs">
+            {sel.map(({ l, p }) => (
+              <div className="co-thumb" key={l.key}>
+                <img src={'/' + p.images[0]} loading="lazy" alt="" />
+                <em>×{l.qty}</em>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 5. Итог */}
+        <div className="summary-card">
+          <div className="sum-row"><span>{t.products} ({selQty})</span><b>{money(rawOldSum)}</b></div>
+          {itemSavings > 0 && <div className="sum-row green"><span>{ext.cartSavings}</span><b>−{money(itemSavings)}</b></div>}
+          {promoCut > 0 && <div className="sum-row green"><span>{ext.promoDiscount} ({promo})</span><b>−{money(promoCut)}</b></div>}
+          <div className="sum-row"><span>{t.delivery}</span><b className="green-txt">{money(0)}</b></div>
+          <div className="sum-divider" />
+          <div className="sum-total"><span>{t.toPay}</span><b>{money(finalSum)}</b></div>
+        </div>
+        <div style={{ height: 20 }} />
+      </div>
+
+      <div className="co-foot">
+        <button type="button" className={'jja-btn shine' + (paying ? ' busy' : '')} onClick={submitPay} disabled={paying}>
+          {paying ? (
+            <><Loader2 size={18} className="spinning" /><span>{ext.payingNow}</span></>
+          ) : (
+            <><ShieldCheck size={17} /><span>{ext.payNow(money(finalSum))}</span></>
+          )}
+        </button>
+      </div>
     </div>
   )
 }
@@ -349,11 +465,18 @@ export function OrderOk({ id }: { id: string }) {
   const [x] = useState(id)
   return (
     <div className="screen ok-screen">
-      <div className="ok-ic"><PartyPopper size={38} /></div>
+      <div className="ok-emblem">
+        <span className="ok-ring" />
+        <span className="ok-ring r2" />
+        <div className="ok-ic"><PartyPopper size={38} /></div>
+      </div>
       <h1>{t.orderOk}</h1>
       <p className="muted">{t.orderOkSub(x)}</p>
-      <button className="btn" onClick={() => { tab('profile'); push('orders') }}>{t.toOrders}</button>
-      <button className="ghost" onClick={() => tab('home')}>{t.continueShop}</button>
+      <button className="jja-btn shine" onClick={() => { tab('profile'); push('order', { id: x }) }}>
+        <QrCode size={17} />
+        <span>{t.ext.qrTitle}</span>
+      </button>
+      <button className="ghost" onClick={() => tab('home')} style={{ marginTop: 6 }}>{t.continueShop}</button>
     </div>
   )
 }

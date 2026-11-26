@@ -5,7 +5,7 @@ import {
   ShieldCheck, Phone, Mail, Star, Truck, Gift, PlayCircle, BadgeCheck,
   ShoppingBag, Globe,
 } from 'lucide-react'
-import { useApp, tx as i18nTx, fmt, type User } from './store'
+import { useApp, tx as i18nTx, type User } from './store'
 import { Sheet } from './ui'
 import { COUNTRIES, type CountryInfo } from './geo'
 import { LANGS } from './i18n'
@@ -99,7 +99,7 @@ export function Onboarding({
   onRegister?: () => void
   onSkip?: () => void
 }) {
-  const { t, cat, lang } = useApp()
+  const { t, cat, lang, money } = useApp()
   const ext = t.ext
   const [step, setStep] = useState(0)
   const [liked, setLiked] = useState(true)
@@ -165,8 +165,8 @@ export function Onboarding({
                   </div>
                   <div className="jjo-pc-name">{i18nTx(p0.name, lang)}</div>
                   <div className="jjo-pc-price">
-                    <strong>{fmt(p0.price)} ₸</strong>
-                    {p0.old > p0.price && <s>{fmt(p0.old)} ₸</s>}
+                    <strong>{money(p0.price)}</strong>
+                    {p0.old > p0.price && <s>{money(p0.old)}</s>}
                   </div>
                 </div>
               </div>
@@ -213,7 +213,7 @@ export function Onboarding({
                   ))}
                   <div className="jjo-oc-summary">
                     <span>2 {t.pcs}</span>
-                    <b>{fmt((p0?.price || 24900) + (p1?.price || 18500))} ₸</b>
+                    <b>{money((p0?.price || 24900) + (p1?.price || 18500))}</b>
                   </div>
                 </div>
 

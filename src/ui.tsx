@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { ChevronLeft, X, Heart, Star, Flag, Leaf, Play, Check, ChevronRight, ShoppingBag, Plus, Minus, Sparkles, CircleCheck, Flame } from 'lucide-react'
-import { useApp, fmt, tx, sizeAxis, colorAxis, hexOf, type Product } from './store'
+import { useApp, tx, sizeAxis, colorAxis, hexOf, type Product } from './store'
+import { COUNTRIES } from './geo'
 import { LANGS } from './i18n'
 
 export function TopBar({ title, right, onBack, sub, noBack }: { title: ReactNode; right?: ReactNode; onBack?: () => void; sub?: ReactNode; noBack?: boolean }) {
@@ -38,11 +39,49 @@ export function LangSheet() {
         <button key={l.code} className={'opt' + (s.lang === l.code ? ' on' : '')} onClick={() => {
           set((x) => ({ ...x, lang: l.code }))
           sheet(null)
-          toast(<span className="toast-row"><Sparkles size={15} color="#6d28d9" />{l.label}</span>)
+          toast(<span className="toast-row"><Sparkles size={15} color="#AE33FF" />{l.label}</span>)
         }}>
           <span className="opt-l"><span className="pill">{l.short}</span>{l.label}</span>{s.lang === l.code && <Check size={18} />}
         </button>
       ))}
+    </Sheet>
+  )
+}
+
+/** Быстрый переключатель страны и валюты (UZS · KZT · RUB · KGS) */
+export function CurrencySheet() {
+  const { s, set, sheet, t, lang, toast } = useApp()
+  return (
+    <Sheet title={t.ext.currencyTitle}>
+      <div className="curr-list">
+        {COUNTRIES.map((co) => {
+          const active = s.country === co.code
+          return (
+            <button
+              key={co.code}
+              className={'curr-opt' + (active ? ' on' : '')}
+              onClick={() => {
+                set((x) => ({ ...x, country: co.code, pay: co.payments[0]?.title ?? x.pay }))
+                sheet(null)
+                toast(
+                  <span className="toast-row">
+                    <span>{co.flag}</span>
+                    <span>{t.ext.currencyChanged(co.name[lang], co.symbol)}</span>
+                  </span>,
+                )
+              }}
+            >
+              <span className="co-flag-lg">{co.flag}</span>
+              <span className="co-meta">
+                <b>{co.name[lang]}</b>
+                <small>{co.currency} · {co.payments[0]?.title}, {co.payments[1]?.title}</small>
+              </span>
+              <span className={'co-sym' + (active ? ' on' : '')}>{co.symbol}</span>
+              {active && <Check size={17} color="#AE33FF" strokeWidth={2.8} />}
+            </button>
+          )
+        })}
+      </div>
     </Sheet>
   )
 }
@@ -74,18 +113,47 @@ export function Row({ label, onClick, right, danger }: { label: ReactNode; onCli
   return <button className={'row' + (danger ? ' danger' : '')} onClick={onClick}><span>{label}</span>{right ?? <ChevronRight size={18} />}</button>
 }
 
-/** Фото с горизонтальным листанием и точками */
+/** Фото с горизонтальным свайп-листанием прямо в ленте (WB / Ozon / Trendyol) */
 export function Gallery({ images, className, onTap, ratio = '4 / 4.4' }: { images: string[]; className?: string; onTap?: () => void; ratio?: string }) {
   const [i, setI] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
+  const startX = useRef(0)
+  const swiped = useRef(false)
   const imgs = images.length ? images : ['']
+
+  const jump = (e: React.MouseEvent, k: number) => {
+    e.stopPropagation()
+    setI(k)
+    const el = ref.current
+    if (el) el.scrollTo({ left: k * el.clientWidth, behavior: 'smooth' })
+  }
+
   return (
     <div className={'gal ' + (className ?? '')} style={{ aspectRatio: ratio }}>
-      <div className="gal-track" ref={ref} onClick={onTap}
-        onScroll={(e) => { const el = e.currentTarget; if (el.clientWidth > 0) setI(Math.round(el.scrollLeft / el.clientWidth)) }}>
-        {imgs.map((src, k) => <div className="gal-slide" key={k}>{src ? <img src={'/' + src} loading="lazy" alt="" /> : null}</div>)}
+      <div
+        className="gal-track"
+        ref={ref}
+        onTouchStart={(e) => { startX.current = e.touches[0].clientX; swiped.current = false }}
+        onTouchMove={(e) => { if (Math.abs(e.touches[0].clientX - startX.current) > 10) swiped.current = true }}
+        onClick={(e) => {
+          if (swiped.current) { e.stopPropagation(); swiped.current = false; return }
+          onTap?.()
+        }}
+        onScroll={(e) => { const el = e.currentTarget; if (el.clientWidth > 0) setI(Math.round(el.scrollLeft / el.clientWidth)) }}
+      >
+        {imgs.map((src, k) => (
+          <div className="gal-slide" key={k}>
+            {src ? <img src={'/' + src} loading="lazy" decoding="async" alt="" /> : null}
+          </div>
+        ))}
       </div>
-      {imgs.length > 1 && <div className="gal-dots">{imgs.map((_, k) => <i key={k} className={k === i ? 'on' : ''} />)}</div>}
+      {imgs.length > 1 && (
+        <div className="gal-dots" onClick={(e) => e.stopPropagation()}>
+          {imgs.map((_, k) => (
+            <button key={k} type="button" className={k === i ? 'on' : ''} onClick={(e) => jump(e, k)} aria-label={`Photo ${k + 1}`} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -124,13 +192,14 @@ export function FavBtn({ id, big }: { id: string; big?: boolean }) {
   )
 }
 
-/** Чистая цена без фейковых рассрочек 0·0·12 */
+/** Чистая мультивалютная цена (UZS · KZT · RUB · KGS) с плавной сменой */
 export function Price({ p, big }: { p: Product; big?: boolean }) {
+  const { money, s } = useApp()
   return (
     <div className={'price-wrap' + (big ? ' big' : '')}>
-      <div className={'price' + (p.pct > 0 ? ' sale' : '') + (big ? ' big' : '')}>
-        <b>{fmt(p.price)} ₸</b>
-        {p.old > 0 && <s>{fmt(p.old)} ₸</s>}
+      <div className={'price' + (p.pct > 0 ? ' sale' : '') + (big ? ' big' : '')} key={s.country}>
+        <b className="price-morph">{money(p.price)}</b>
+        {p.old > 0 && <s>{money(p.old)}</s>}
       </div>
     </div>
   )
@@ -151,7 +220,7 @@ export function Rating({ p }: { p: Product }) {
 
 /** Быстрый выбор размера и цвета (работает и на главной, и в корзине) */
 export function QuickSizeSheet({ p, onReplaceKey }: { p: Product; onReplaceKey?: string }) {
-  const { t, lang, addToCart, set, sheet, toast, push } = useApp()
+  const { t, lang, addToCart, set, sheet, toast, push, money } = useApp()
   const cAx = colorAxis(p)
   const sAx = sizeAxis(p)
   const [color, setColor] = useState(cAx?.values[0]?.id)
@@ -198,8 +267,8 @@ export function QuickSizeSheet({ p, onReplaceKey }: { p: Product; onReplaceKey?:
           <div className="qs-brand">{p.brand || p.seller}</div>
           <div className="qs-name">{tx(p.name, lang)}</div>
           <div className="qs-price">
-            <b>{fmt(p.price)} ₸</b>
-            {p.old > 0 && <s>{fmt(p.old)} ₸</s>}
+            <b>{money(p.price)}</b>
+            {p.old > 0 && <s>{money(p.old)}</s>}
             {p.pct > 0 && <em>-{p.pct}%</em>}
           </div>
         </div>

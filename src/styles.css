@@ -766,9 +766,9 @@ img { display: block; }
 .sz-table th { background: var(--bg); padding: 8px 4px; font-weight: 700; font-size: 12px; color: var(--ink2); }
 .sz-table td { padding: 8px 4px; border-top: 1px solid var(--line); }
 .sz-table tr.on td { background: var(--p-tint); color: var(--p-deep); font-weight: 700; }
-.ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.ai-grid label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--ink2); }
-.ai-grid input { height: 46px; border-radius: 12px; border: 1.5px solid var(--line); padding: 0 12px; font-size: 16px; font-weight: 700; }
+.ai-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.ai-grid label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--ink2); min-width: 0; }
+.ai-grid input { height: 46px; width: 100%; min-width: 0; border-radius: 12px; border: 1.5px solid var(--line); padding: 0 12px; font-size: 16px; font-weight: 700; }
 .ai-res { display: flex; align-items: center; gap: 8px; background: var(--p-soft); color: var(--p-deep); border-radius: 12px; padding: 14px; font-weight: 700; margin: 4px 0 12px; }
 
 /* ==========================================================================
