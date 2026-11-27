@@ -534,7 +534,7 @@ export function Country() {
                   <span>
                     <b>{co.name[lang]}</b>
                     <small style={{ display: 'block', fontSize: 12, color: '#968fa8' }}>
-                      {co.currency} · {co.payments[0]?.title}, {co.payments[1]?.title}
+                      {co.currency} · {co.dial}
                     </small>
                   </span>
                 </span>
@@ -612,11 +612,11 @@ export function Doc({ kind }: { kind: string }) {
     : (lang === 'tr' ? [
         ['1. Genel hükümler', 'Bu kamu ofertası, JJ Market platformu üzerinden sunulan ürünlerin satın alınması ve teslimatına ilişkin kuralları belirler.'],
         ['2. Hizmet bölgesi', 'Platform şu anda 4 ülkede hizmet vermektedir: Özbekistan, Kazakistan, Rusya ve Kırgızistan.'],
-        ['3. Ödeme ve iade', 'Ödeme Kaspi Pay, banka kartı, Apple Pay ve Google Pay ile yapılabilir. Ürün iadesi teslimattan sonraki 14 gün içinde geçerlidir.'],
+        ['3. Ödeme ve iade', 'Ödeme banka kartı, Apple Pay ve Google Pay ile yapılabilir. Ürün iadesi teslimattan sonraki 14 gün içinde geçerlidir.'],
       ] : [
         ['1. Общие положения', 'Настоящая публичная оферта определяет условия покупки товаров на маркетплейсе JJ Market (ТОО «АСХАТ-ЖЖ»). Оформляя заказ, покупатель принимает условия оферты.'],
         ['2. География доставки', 'Доставка и пункты выдачи JJ Market работают в 4 странах: Узбекистан, Казахстан, Россия и Кыргызстан.'],
-        ['3. Оплата, обмен и возврат', 'Оплата доступна через Kaspi Pay, банковскую карту, Apple Pay и Google Pay. Возврат и обмен товара надлежащего качества возможен в течение 14 дней с момента получения.'],
+        ['3. Оплата, обмен и возврат', 'Оплата доступна любой банковской картой, а также через Apple Pay и Google Pay. Возврат и обмен товара надлежащего качества возможен в течение 14 дней с момента получения.'],
         ['4. Служба заботы о клиентах', 'По любым вопросам обращайтесь в чат поддержки приложения или по адресу support@jjmarket.kz.'],
       ])
 

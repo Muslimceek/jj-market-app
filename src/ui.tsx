@@ -74,7 +74,7 @@ export function CurrencySheet() {
               <span className="co-flag-lg">{co.flag}</span>
               <span className="co-meta">
                 <b>{co.name[lang]}</b>
-                <small>{co.currency} · {co.payments[0]?.title}, {co.payments[1]?.title}</small>
+                <small>{co.currency} · {co.dial}</small>
               </span>
               <span className={'co-sym' + (active ? ' on' : '')}>{co.symbol}</span>
               {active && <Check size={17} color="#AE33FF" strokeWidth={2.8} />}

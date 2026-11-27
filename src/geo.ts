@@ -1,12 +1,17 @@
 export type CountryCode = 'UZ' | 'KZ' | 'RU' | 'KG'
 
 export interface LocalPayment {
-  id: string
+  id: 'card' | 'apple' | 'google'
   title: string
   sub: string
-  badge?: string
-  kind: 'wallet' | 'card' | 'phone' | 'fast'
+  kind: 'card' | 'apple' | 'google'
 }
+
+export const UNIVERSAL_PAYMENTS: LocalPayment[] = [
+  { id: 'card', title: 'Банковская карта', sub: 'Подключить любую карту', kind: 'card' },
+  { id: 'apple', title: 'Apple Pay', sub: 'Оплата в одно касание', kind: 'apple' },
+  { id: 'google', title: 'Google Pay', sub: 'Быстрая онлайн-оплата', kind: 'google' },
+]
 
 export interface CountryInfo {
   code: CountryCode
@@ -36,12 +41,7 @@ export const COUNTRIES: CountryInfo[] = [
       'Нукус', 'Карши', 'Коканд', 'Маргилан', 'Навои', 'Ургенч',
       'Термез', 'Джизак', 'Гулистан', 'Чирчик', 'Ангрен', 'Алмалык',
     ],
-    payments: [
-      { id: 'payme', title: 'Payme', sub: 'Мгновенно · 0%', badge: 'Топ', kind: 'wallet' },
-      { id: 'click', title: 'Click Up', sub: 'По номеру телефона', kind: 'fast' },
-      { id: 'uzcard', title: 'Uzcard / Humo', sub: 'Локальная карта', kind: 'card' },
-      { id: 'card', title: 'Visa / Mastercard', sub: 'Международная', kind: 'phone' },
-    ],
+    payments: UNIVERSAL_PAYMENTS,
   },
   {
     code: 'KZ',
@@ -57,12 +57,7 @@ export const COUNTRIES: CountryInfo[] = [
       'Павлодар', 'Усть-Каменогорск', 'Семей', 'Атырау', 'Костанай',
       'Кызылорда', 'Уральск', 'Петропавловск', 'Актау', 'Темиртау', 'Туркестан',
     ],
-    payments: [
-      { id: 'kaspi', title: 'Kaspi Pay', sub: 'QR или счёт в приложении', badge: 'Топ', kind: 'wallet' },
-      { id: 'halyk', title: 'Halyk Bank', sub: 'Онлайн-оплата', kind: 'fast' },
-      { id: 'card', title: 'Банковская карта', sub: 'Visa · Mastercard', kind: 'card' },
-      { id: 'apple', title: 'Apple / Google Pay', sub: 'В одно касание', kind: 'phone' },
-    ],
+    payments: UNIVERSAL_PAYMENTS,
   },
   {
     code: 'RU',
@@ -78,12 +73,7 @@ export const COUNTRIES: CountryInfo[] = [
       'Нижний Новгород', 'Челябинск', 'Самара', 'Уфа', 'Ростов-на-Дону',
       'Краснодар', 'Омск', 'Воронеж', 'Пермь', 'Волгоград', 'Красноярск', 'Сочи',
     ],
-    payments: [
-      { id: 'sbp', title: 'СБП', sub: 'Любой банк РФ · 0%', badge: 'Топ', kind: 'fast' },
-      { id: 'mir', title: 'Карта Мир', sub: 'Visa · MC · Мир', kind: 'card' },
-      { id: 'sber', title: 'SberPay', sub: 'Быстрый переход', kind: 'wallet' },
-      { id: 'tpay', title: 'T-Pay', sub: 'В одно касание', kind: 'phone' },
-    ],
+    payments: UNIVERSAL_PAYMENTS,
   },
   {
     code: 'KG',
@@ -98,12 +88,7 @@ export const COUNTRIES: CountryInfo[] = [
       'Бишкек', 'Ош', 'Джалал-Абад', 'Каракол', 'Токмок', 'Узген',
       'Балыкчы', 'Кара-Балта', 'Нарын', 'Талас', 'Баткен', 'Кант',
     ],
-    payments: [
-      { id: 'mbank', title: 'MBANK', sub: 'Перевод без комиссии', badge: 'Топ', kind: 'wallet' },
-      { id: 'elcart', title: 'Элкарт', sub: 'Национальная карта', kind: 'card' },
-      { id: 'odengi', title: 'О!Деньги', sub: 'QR и баланс', kind: 'fast' },
-      { id: 'card', title: 'Visa / Mastercard', sub: 'Любой банк', kind: 'phone' },
-    ],
+    payments: UNIVERSAL_PAYMENTS,
   },
 ]
 

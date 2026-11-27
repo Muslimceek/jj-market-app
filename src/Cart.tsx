@@ -1,20 +1,25 @@
 import { useMemo, useState } from 'react'
 import {
   ChevronRight, Heart, CreditCard, ShoppingCart, Check, PartyPopper, Trash2,
-  MapPin, Store, Tag, Sparkles, RotateCcw, Smartphone, Wallet, ShieldCheck,
-  SlidersHorizontal, ArrowRight, Zap, User as UserIc, Loader2, QrCode,
+  MapPin, Store, Tag, Sparkles, RotateCcw, ShieldCheck, SlidersHorizontal,
+  ArrowRight, User as UserIc, Loader2, QrCode, Plus, Lock,
 } from 'lucide-react'
 import { useApp, tx, sizeAxis } from './store'
 import { Sheet, Stepper, QuickSizeSheet, HScroll, SectionHead, TopBar, CurrencySheet } from './ui'
 import { AddressSheet, addrMeta } from './Home'
-import { countryByCode, type LocalPayment } from './geo'
+import { countryByCode, UNIVERSAL_PAYMENTS } from './geo'
+
+const CARDS_KEY = 'jj-market-saved-cards'
+interface SavedCard { id: string; last4: string; brand: string; exp: string }
+const loadCards = (): SavedCard[] => { try { return JSON.parse(localStorage.getItem(CARDS_KEY) || '[]') } catch { return [] } }
+const maskCardNum = (s: string) => s.replace(/\D/g, '').slice(0, 16).replace(/(\d{4})(?=\d)/g, '$1 ')
+const maskExp = (s: string) => { const d = s.replace(/\D/g, '').slice(0, 4); return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d }
 
 export function PaySheet() {
   const { t, s, set, sheet } = useApp()
-  const co = countryByCode(s.country)
   return (
     <Sheet title={t.payMethod}>
-      {co.payments.map((p) => (
+      {UNIVERSAL_PAYMENTS.map((p) => (
         <button key={p.id} className="radio-row" onClick={() => { set((x) => ({ ...x, pay: p.title })); sheet(null) }}>
           <span className="opt-l"><CreditCard size={18} />{p.title}</span><span className={'radio' + (s.pay === p.title ? ' on' : '')} />
         </button>
@@ -23,16 +28,83 @@ export function PaySheet() {
   )
 }
 
-const FREE_SHIP_THRESHOLD = 15000
+function AddCardSheet({ onSaved }: { onSaved: (c: SavedCard) => void }) {
+  const { t, sheet, lang } = useApp()
+  const [num, setNum] = useState('')
+  const [exp, setExp] = useState('')
+  const [cvc, setCvc] = useState('')
+  const raw = num.replace(/\D/g, '')
+  const ok = raw.length === 16 && exp.replace(/\D/g, '').length === 4 && cvc.replace(/\D/g, '').length === 3
+  const brand = raw.startsWith('4') ? 'Visa' : raw.startsWith('5') || raw.startsWith('2') ? 'Mastercard' : 'Card'
 
-function payIconOf(kind: LocalPayment['kind']) {
-  if (kind === 'wallet') return Wallet
-  if (kind === 'fast') return Zap
-  if (kind === 'phone') return Smartphone
-  return CreditCard
+  const save = () => {
+    if (!ok) return
+    const next: SavedCard = { id: 'card-' + Date.now(), last4: raw.slice(-4), brand, exp }
+    const list = [next, ...loadCards().filter((x) => x.last4 !== next.last4)].slice(0, 4)
+    localStorage.setItem(CARDS_KEY, JSON.stringify(list))
+    onSaved(next)
+    sheet(null)
+  }
+
+  return (
+    <Sheet title={lang === 'tr' ? 'Banka kartı ekle' : lang === 'kk' ? 'Банк картасын қосу' : 'Подключить банковскую карту'}>
+      <div className="card-preview">
+        <div className="cp-top">
+          <span className="cp-chip" />
+          <b>{brand}</b>
+        </div>
+        <div className="cp-num">{num || '•••• •••• •••• ••••'}</div>
+        <div className="cp-foot">
+          <span>JJ MARKET PAY</span>
+          <b>{exp || 'MM/YY'}</b>
+        </div>
+      </div>
+
+      <div className="jja-inp" style={{ marginBottom: 9 }}>
+        <span className="jja-ic"><CreditCard size={16} /></span>
+        <input
+          autoFocus
+          inputMode="numeric"
+          placeholder="0000 0000 0000 0000"
+          value={num}
+          onChange={(e) => setNum(maskCardNum(e.target.value))}
+        />
+      </div>
+
+      <div className="jja-row2" style={{ marginBottom: 12 }}>
+        <div className="jja-inp">
+          <input
+            inputMode="numeric"
+            placeholder="MM/YY"
+            value={exp}
+            onChange={(e) => setExp(maskExp(e.target.value))}
+          />
+        </div>
+        <div className="jja-inp">
+          <input
+            inputMode="numeric"
+            type="password"
+            maxLength={3}
+            placeholder="CVC"
+            value={cvc}
+            onChange={(e) => setCvc(e.target.value.replace(/\D/g, '').slice(0, 3))}
+          />
+        </div>
+      </div>
+
+      <div className="card-safe-note">
+        <Lock size={12} color="#16A34A" />
+        <span>{lang === 'tr' ? '3D Secure ile korumalı bağlantı' : 'Данные защищены шифрованием 3D Secure'}</span>
+      </div>
+
+      <button type="button" className={'jja-btn' + (ok ? ' shine' : ' dis')} onClick={save}>
+        {t.save}
+      </button>
+    </Sheet>
+  )
 }
 
-/* ---------- 1. КОРЗИНА (чистая, без перегруза оплатой) → переход в отдельный Checkout ---------- */
+/* ---------- 1. КОРЗИНА (без плашки «Бесплатная доставка активирована») ---------- */
 export function Cart() {
   const { s, set, t, lang, cat, sheet, toast, push, tab, requireLogin, money } = useApp()
   const ext = t.ext
@@ -64,9 +136,6 @@ export function Cart() {
   const totalSavings = itemSavings + promoCut
   const allSel = lines.length > 0 && sel.length === lines.length
   const addr = addrMeta(s)
-
-  const shipProgress = Math.min(100, Math.round((finalSum / FREE_SHIP_THRESHOLD) * 100))
-  const shipNeed = Math.max(0, FREE_SHIP_THRESHOLD - finalSum)
 
   const crossSell = useMemo(() => {
     const inCartIds = new Set(s.cart.map((c) => c.productId))
@@ -144,16 +213,7 @@ export function Cart() {
       ) : (
         <>
           <div className="scroll cart-scroll">
-            {/* 1. Прогресс бесплатной доставки */}
-            <div className={'ship-bar-card' + (shipNeed === 0 ? ' ok' : '')}>
-              <div className="sb-top">
-                <ShieldCheck size={16} color={shipNeed === 0 ? '#16a34a' : '#AE33FF'} />
-                <span>{shipNeed === 0 ? ext.cartFreeShipOk : ext.cartFreeShipNeed(money(shipNeed).replace(/\s*[^\d\s]+$/, ''))}</span>
-              </div>
-              <div className="sb-track"><i style={{ width: `${shipProgress}%` }} /></div>
-            </div>
-
-            {/* 2. Адрес доставки */}
+            {/* 1. Адрес доставки */}
             <button className="cart-addr-card" onClick={() => sheet(<AddressSheet />)}>
               <span className="cac-ic">{addr?.isPickup ? <Store size={17} /> : <MapPin size={17} />}</span>
               <div className="cac-txt">
@@ -164,7 +224,7 @@ export function Cart() {
               <ChevronRight size={16} color="#968fa8" />
             </button>
 
-            {/* 3. Выбрать все / Удалить выбранные */}
+            {/* 2. Выбрать все / Удалить выбранные */}
             <div className="cart-select-bar">
               <label className="cb-row">
                 <input type="checkbox" checked={allSel} onChange={() => set((x) => ({ ...x, cart: x.cart.map((l) => ({ ...l, selected: !allSel })) }))} />
@@ -178,7 +238,7 @@ export function Cart() {
               )}
             </div>
 
-            {/* 4. Товары */}
+            {/* 3. Товары */}
             <div className="cart-cards">
               {lines.map(({ l, p }) => {
                 const price = p.variants.find((v) => v.id === l.variantId)?.price || p.price
@@ -233,7 +293,7 @@ export function Cart() {
               })}
             </div>
 
-            {/* 5. Промокод */}
+            {/* 4. Промокод */}
             <div className="promo-card">
               <div className={'promo-row' + (promoErr ? ' err' : '')}>
                 <Tag size={16} color="#AE33FF" />
@@ -256,17 +316,16 @@ export function Cart() {
               )}
             </div>
 
-            {/* 6. Итого */}
+            {/* 5. Итого */}
             <div className="summary-card">
               <div className="sum-row"><span>{t.products} ({selQty})</span><b>{money(rawOldSum)}</b></div>
               {itemSavings > 0 && <div className="sum-row green"><span>{ext.cartSavings}</span><b>−{money(itemSavings)}</b></div>}
               {promoCut > 0 && <div className="sum-row green"><span>{ext.promoDiscount} ({promoApplied})</span><b>−{money(promoCut)}</b></div>}
-              <div className="sum-row"><span>{t.delivery}</span><b className="green-txt">{money(0)}</b></div>
               <div className="sum-divider" />
               <div className="sum-total"><span>{t.toPay}</span><b>{money(finalSum)}</b></div>
             </div>
 
-            {/* 7. С этим часто берут */}
+            {/* 6. С этим часто берут */}
             {crossSell.length > 0 && (
               <>
                 <SectionHead title={ext.cartAlsoBuy} />
@@ -295,12 +354,14 @@ export function Cart() {
   )
 }
 
-/* ---------- 2. ОТДЕЛЬНЫЙ ЭКРАН ОФОРМЛЕНИЯ ЗАКАЗА (Checkout с локальной оплатой по стране) ---------- */
+/* ---------- 2. ОФОРМЛЕНИЕ ЗАКАЗА: только Банковская карта (+ подключение любой карты), Apple Pay, Google Pay ---------- */
 export function Checkout({ promo }: { promo?: string | null }) {
   const { s, set, t, lang, cat, sheet, toast, push, pop, money } = useApp()
   const ext = t.ext
   const co = countryByCode(s.country)
   const [paying, setPaying] = useState(false)
+  const [cards, setCards] = useState<SavedCard[]>(loadCards)
+  const [selCardId, setSelCardId] = useState<string | null>(() => loadCards()[0]?.id ?? null)
 
   const sel = s.cart
     .filter((l) => l.selected)
@@ -318,20 +379,43 @@ export function Checkout({ promo }: { promo?: string | null }) {
   const finalSum = Math.max(0, subSum - promoCut)
   const addr = addrMeta(s)
 
-  const activePay = co.payments.some((x) => x.title === s.pay) ? s.pay! : co.payments[0].title
+  const payOptions = useMemo(() => ([
+    { id: 'card' as const, title: lang === 'tr' ? 'Banka kartı' : lang === 'kk' ? 'Банк картасы' : 'Банковская карта', sub: lang === 'tr' ? 'Herhangi bir kart ekle' : 'Любая карта Visa · MC' },
+    { id: 'apple' as const, title: 'Apple Pay', sub: lang === 'tr' ? 'Tek dokunuşla ödeme' : 'В одно касание' },
+    { id: 'google' as const, title: 'Google Pay', sub: lang === 'tr' ? 'Hızlı çevrimiçi ödeme' : 'Быстрая оплата' },
+  ]), [lang])
+
+  const activeOpt = payOptions.find((x) => x.title === s.pay) ?? payOptions[0]
+  const activeCard = cards.find((c) => c.id === selCardId) ?? cards[0] ?? null
+
+  const openAddCard = () => {
+    sheet(
+      <AddCardSheet
+        onSaved={(c) => {
+          setCards(loadCards())
+          setSelCardId(c.id)
+          set((x) => ({ ...x, pay: payOptions[0].title }))
+          toast(<span className="toast-row"><Check size={15} color="#16a34a" strokeWidth={3} />{c.brand} •••• {c.last4}</span>)
+        }}
+      />,
+    )
+  }
 
   const submitPay = () => {
     if (!sel.length || paying) return
     if (!addr) { toast(t.needAddress); sheet(<AddressSheet />); return }
+    const payLabel = activeOpt.id === 'card' && activeCard
+      ? `${activeCard.brand} •••• ${activeCard.last4}`
+      : activeOpt.title
     setPaying(true)
     window.setTimeout(() => {
       const id = String(Math.floor(100000 + Math.random() * 899999))
       const now = new Date()
       set((x) => ({
         ...x,
-        pay: activePay,
+        pay: activeOpt.title,
         orders: [{
-          id, date: now.toISOString(), total: finalSum, address: addr.full, pay: activePay, status: 0,
+          id, date: now.toISOString(), total: finalSum, address: addr.full, pay: payLabel, status: 0,
           lines: sel.map(({ l, p }) => ({
             productId: p.id, label: l.label, qty: l.qty,
             price: p.variants.find((v) => v.id === l.variantId)?.price || p.price,
@@ -389,36 +473,79 @@ export function Checkout({ promo }: { promo?: string | null }) {
           </div>
         </div>
 
-        {/* 3. Локальные способы оплаты выбранной страны */}
+        {/* 3. Универсальные способы оплаты для всех стран: Банковская карта, Apple Pay, Google Pay */}
         <div className="chk-card">
           <div className="co-sec-h">
             <CreditCard size={15} color="#AE33FF" />
             <b>{t.payMethod}</b>
-            <span className="co-country-tag">{co.flag} {co.name[lang]}</span>
           </div>
-          <div className="pay-grid local">
-            {co.payments.map((pm) => {
-              const active = activePay === pm.title
-              const Ic = payIconOf(pm.kind)
-              return (
-                <button
-                  key={pm.id}
-                  type="button"
-                  className={'pay-card rich' + (active ? ' on' : '')}
-                  onClick={() => set((x) => ({ ...x, pay: pm.title }))}
-                >
-                  <div className="pc-top">
-                    <span className="pc-ic"><Ic size={16} /></span>
-                    <span className="pc-top-r">
-                      {pm.badge && <em className="pc-badge-top">{pm.badge}</em>}
-                      {active && <span className="pc-chk"><Check size={11} strokeWidth={3} /></span>}
-                    </span>
-                  </div>
-                  <b>{pm.title}</b>
-                  <small>{pm.sub}</small>
+
+          <div className="pay-univ-list">
+            {/* Банковская карта — широкая карточка с возможностью подключить любую карту */}
+            <button
+              type="button"
+              className={'pay-card rich full' + (activeOpt.id === 'card' ? ' on' : '')}
+              onClick={() => set((x) => ({ ...x, pay: payOptions[0].title }))}
+            >
+              <div className="pc-top">
+                <span className="pc-ic"><CreditCard size={16} /></span>
+                <div className="pc-mid">
+                  <b>{payOptions[0].title}</b>
+                  <small>{activeCard ? `${activeCard.brand} •••• ${activeCard.last4} (${activeCard.exp})` : payOptions[0].sub}</small>
+                </div>
+                {activeOpt.id === 'card' && <span className="pc-chk"><Check size={11} strokeWidth={3} /></span>}
+              </div>
+            </button>
+
+            {/* Список подключённых карт + кнопка «Подключить карту» */}
+            {activeOpt.id === 'card' && (
+              <div className="saved-cards-strip">
+                {cards.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={'sc-pill' + (activeCard?.id === c.id ? ' on' : '')}
+                    onClick={() => setSelCardId(c.id)}
+                  >
+                    <CreditCard size={12} />
+                    <span>{c.brand} ••{c.last4}</span>
+                  </button>
+                ))}
+                <button type="button" className="sc-pill add" onClick={openAddCard}>
+                  <Plus size={13} />
+                  <span>{lang === 'tr' ? 'Kart bağla' : lang === 'kk' ? 'Карта қосу' : 'Подключить карту'}</span>
                 </button>
-              )
-            })}
+              </div>
+            )}
+
+            {/* Apple Pay и Google Pay рядом */}
+            <div className="pay-grid local">
+              <button
+                type="button"
+                className={'pay-card rich' + (activeOpt.id === 'apple' ? ' on' : '')}
+                onClick={() => set((x) => ({ ...x, pay: 'Apple Pay' }))}
+              >
+                <div className="pc-top">
+                  <span className="pc-ic brand-apple"><img src="/brand/apple.svg" alt="" /></span>
+                  {activeOpt.id === 'apple' && <span className="pc-chk"><Check size={11} strokeWidth={3} /></span>}
+                </div>
+                <b>Apple Pay</b>
+                <small>{payOptions[1].sub}</small>
+              </button>
+
+              <button
+                type="button"
+                className={'pay-card rich' + (activeOpt.id === 'google' ? ' on' : '')}
+                onClick={() => set((x) => ({ ...x, pay: 'Google Pay' }))}
+              >
+                <div className="pc-top">
+                  <span className="pc-ic brand-google"><img src="/brand/google.svg" alt="" /></span>
+                  {activeOpt.id === 'google' && <span className="pc-chk"><Check size={11} strokeWidth={3} /></span>}
+                </div>
+                <b>Google Pay</b>
+                <small>{payOptions[2].sub}</small>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -440,7 +567,6 @@ export function Checkout({ promo }: { promo?: string | null }) {
           <div className="sum-row"><span>{t.products} ({selQty})</span><b>{money(rawOldSum)}</b></div>
           {itemSavings > 0 && <div className="sum-row green"><span>{ext.cartSavings}</span><b>−{money(itemSavings)}</b></div>}
           {promoCut > 0 && <div className="sum-row green"><span>{ext.promoDiscount} ({promo})</span><b>−{money(promoCut)}</b></div>}
-          <div className="sum-row"><span>{t.delivery}</span><b className="green-txt">{money(0)}</b></div>
           <div className="sum-divider" />
           <div className="sum-total"><span>{t.toPay}</span><b>{money(finalSum)}</b></div>
         </div>
