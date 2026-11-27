@@ -381,74 +381,249 @@
 }
 .wr-text:focus { border-color: var(--p); background: #fff; }
 
-/* 8. Витрина магазина продавца (SellerStore) */
-.ss-hero {
-  position: relative; flex: none; padding: 6px 16px 22px; overflow: hidden;
-  background: linear-gradient(156deg, #521192 0%, #7C18CE 58%, #AE33FF 100%);
-  color: #fff;
+/* 8. ПРЕМИАЛЬНАЯ ВИТРИНА МАГАЗИНА ПРОДАВЦА v2 (Motion Cover + White Identity Card + Search + Hits) */
+.ss-v2-screen { position: relative; background: var(--bg); }
+.ss-v2-scroll { padding: 0 !important; }
+
+/* Липкая верхняя панель при скролле */
+.ss-sticky-bar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+  height: 52px; padding: 0 12px;
+  display: flex; align-items: center; gap: 9px;
+  background: rgba(255, 255, 255, .94); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--line); box-shadow: 0 4px 16px rgba(34, 34, 38, .06);
+  transform: translateY(-108%); opacity: 0; pointer-events: none;
+  transition: transform .26s cubic-bezier(.22, 1, .36, 1), opacity .22s;
 }
-.ss-top {
+.ss-sticky-bar.show { transform: none; opacity: 1; pointer-events: auto; }
+.ss-st-back { width: 34px; height: 34px; border-radius: 11px; background: var(--bg); display: grid; place-items: center; color: var(--ink); flex: none; }
+.ss-st-mid { flex: 1; min-width: 0; }
+.ss-st-mid b { display: block; font-size: 14.5px; font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ss-st-mid small { display: block; font-size: 11px; color: var(--ink3); font-weight: 600; }
+.ss-st-follow {
+  height: 32px; padding: 0 11px; border-radius: 10px; flex: none;
+  background: var(--p); color: #fff; font-size: 12px; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.ss-st-follow.on { background: var(--green-soft); color: #15803D; }
+
+/* Моушн-обложка магазина */
+.ss-cover {
+  position: relative; height: 118px; padding: 10px 14px 0; overflow: hidden;
+  background: linear-gradient(148deg, #4F108E 0%, #7C18CE 55%, #AE33FF 100%);
+}
+.ss-cover-grid {
+  position: absolute; inset: 0; pointer-events: none; opacity: .16;
+  background-image: radial-gradient(rgba(255, 255, 255, .8) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+.ss-cover-shine {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, .22) 50%, transparent 68%);
+  transform: translateX(-130%); animation: heroSheen 5.4s ease-in-out infinite;
+}
+.ss-cover-bar {
   position: relative; z-index: 3;
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  margin-bottom: 12px;
 }
-.ss-official {
+.ss-official-v2 {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 4px 10px; border-radius: 999px;
-  background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .24);
-  font-size: 11px; font-weight: 700; color: #fff;
+  padding: 5px 11px; border-radius: 999px;
+  background: rgba(255, 255, 255, .17); border: 1px solid rgba(255, 255, 255, .28);
+  backdrop-filter: blur(10px); font-size: 11.2px; font-weight: 800; color: #fff;
 }
-.ss-chat-ic {
-  width: 32px; height: 32px; border-radius: 10px;
-  background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .24);
-  color: #fff; display: grid; place-items: center;
+.ss-cover-acts { display: inline-flex; gap: 6px; }
+.ss-glass-ic {
+  width: 34px; height: 34px; border-radius: 11px;
+  background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .26);
+  backdrop-filter: blur(8px); color: #fff; display: grid; place-items: center;
+  transition: transform .14s;
 }
-.ss-card {
-  position: relative; z-index: 2; overflow: hidden;
-  background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .26);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border-radius: 20px; padding: 13px;
-}
-.ss-id-row { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; }
-.ss-av {
-  position: relative; width: 48px; height: 48px; border-radius: 15px; flex: none;
-  background: #fff; color: var(--p); display: grid; place-items: center;
-  box-shadow: 0 8px 18px rgba(34, 8, 66, .24);
-}
-.ss-av i {
-  position: absolute; right: -2px; bottom: -2px; width: 12px; height: 12px; border-radius: 50%;
-  background: #4ADE80; border: 2px solid #fff;
-}
-.ss-meta { flex: 1; min-width: 0; }
-.ss-meta h1 { margin: 0; font-size: 18px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ss-stats {
-  display: flex; align-items: center; gap: 6px; margin-top: 3px;
-  font-size: 12px; color: rgba(255, 255, 255, .86);
-}
-.ss-stats span { display: inline-flex; align-items: center; gap: 4px; }
-.ss-stats em { font-style: normal; opacity: .55; }
-.ss-btns { display: grid; grid-template-columns: 1.15fr 1fr; gap: 8px; }
-.ss-follow-btn, .ss-msg-btn {
-  height: 38px; border-radius: 12px; font-size: 12.8px; font-weight: 800;
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  transition: transform .14s, background .18s;
-}
-.ss-follow-btn { background: #fff; color: #6B14B8; box-shadow: 0 6px 14px rgba(34, 8, 66, .18); }
-.ss-follow-btn.on { background: rgba(74, 222, 128, .26); color: #C2FDDD; border: 1px solid rgba(155, 248, 196, .48); box-shadow: none; }
-.ss-follow-btn.burst { animation: followBurst .36s cubic-bezier(.22, 1.4, .36, 1); }
-.ss-msg-btn { background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .28); color: #fff; }
-.ss-follow-btn:active, .ss-msg-btn:active { transform: scale(.96); }
+.ss-glass-ic:active { transform: scale(.92); }
 
-.ss-scroll {
-  position: relative; z-index: 3; margin-top: -12px;
-  border-radius: 22px 22px 0 0; background: var(--bg); padding-top: 12px;
+.ss-body-pad { padding: 0 14px; }
+
+/* Белая приподнятая карточка бренда */
+.ss-id-card {
+  position: relative; z-index: 4; margin-top: -48px; margin-bottom: 12px;
+  background: #fff; border-radius: 22px; padding: 15px;
+  border: 1px solid rgba(72, 72, 72, .07);
+  box-shadow: 0 12px 30px rgba(46, 12, 86, .1);
+  animation: jjaPop .36s cubic-bezier(.22, 1, .36, 1);
 }
-.ss-filter-bar { margin-bottom: 8px; }
-.ss-tabs { display: flex; gap: 7px; overflow-x: auto; scrollbar-width: none; }
-.ss-tabs button {
-  flex: none; height: 34px; padding: 0 12px; border-radius: 11px;
+.ss-id-head { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
+.ss-emblem-v2 {
+  position: relative; width: 54px; height: 54px; border-radius: 17px; flex: none;
+  background: linear-gradient(142deg, #C258FF 0%, #AE33FF 54%, #7B14C7 100%);
+  color: #fff; font-size: 19px; font-weight: 800; letter-spacing: -.4px;
+  display: grid; place-items: center;
+  box-shadow: 0 10px 22px rgba(174, 51, 255, .36);
+}
+.ss-online-pulse {
+  position: absolute; right: -2px; bottom: -2px; width: 14px; height: 14px; border-radius: 50%;
+  background: #16A34A; border: 2.5px solid #fff;
+  box-shadow: 0 0 0 0 rgba(22, 163, 74, .45); animation: jjaPulseDot 2s infinite;
+}
+.ss-id-txt { flex: 1; min-width: 0; }
+.ss-id-name { display: flex; align-items: center; gap: 5px; }
+.ss-id-name h1 {
+  margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.35px; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ss-id-status {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 3px;
+  font-size: 12px; font-weight: 600; color: #16A34A;
+}
+.ss-id-status i { width: 6px; height: 6px; border-radius: 50%; background: #16A34A; }
+
+/* 3 метрики магазина */
+.ss-metrics {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  margin-bottom: 13px;
+}
+.ss-m-tile {
+  background: var(--bg); border-radius: 14px; padding: 9px 6px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.ss-m-ic {
+  width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; margin-bottom: 2px;
+}
+.ss-m-ic.amber { background: #FEF3C7; color: #D97706; }
+.ss-m-ic.violet { background: var(--p-soft); color: var(--p); }
+.ss-m-ic.green { background: var(--green-soft); color: #16A34A; }
+.ss-m-tile b { font-size: 14px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ss-m-tile small { font-size: 10.5px; font-weight: 600; color: var(--ink3); }
+
+/* 2 удобные кнопки 44px */
+.ss-cta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.ss-btn-follow, .ss-btn-chat {
+  height: 44px; border-radius: 14px; font-size: 13.5px; font-weight: 800;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  transition: transform .14s, background .18s, color .18s;
+}
+.ss-btn-follow {
+  background: var(--p); color: #fff;
+  box-shadow: 0 7px 18px rgba(174, 51, 255, .3);
+}
+.ss-btn-follow.on { background: var(--green-soft); color: #15803D; box-shadow: none; border: 1px solid rgba(22, 163, 74, .28); }
+.ss-btn-follow.burst { animation: followBurst .38s cubic-bezier(.22, 1.45, .36, 1); }
+.ss-btn-chat {
+  background: var(--p-tint); color: var(--p-deep);
+  border: 1.5px solid rgba(174, 51, 255, .24);
+}
+.ss-btn-follow:active, .ss-btn-chat:active { transform: scale(.96); }
+
+/* Поиск внутри магазина */
+.ss-search-box {
+  display: flex; align-items: center; gap: 9px; height: 44px; padding: 0 13px;
+  border-radius: 14px; background: #fff; border: 1.5px solid var(--line);
+  box-shadow: var(--shadow-sm); margin-bottom: 13px;
+  transition: border-color .16s, box-shadow .16s;
+}
+.ss-search-box:focus-within { border-color: var(--p); box-shadow: 0 0 0 3px rgba(174, 51, 255, .12); }
+.ss-s-ic { color: var(--p); flex: none; }
+.ss-search-box input { flex: 1; min-width: 0; border: 0; background: none; font-size: 14px; font-weight: 500; }
+.ss-s-clr { width: 24px; height: 24px; border-radius: 50%; background: var(--bg); color: var(--ink2); display: grid; place-items: center; }
+
+/* Хиты магазина */
+.ss-hits-sec { margin-bottom: 13px; }
+.ss-sec-head { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 8px; }
+.ss-sec-head b { display: inline-flex; align-items: center; gap: 6px; font-size: 14.5px; font-weight: 800; color: var(--ink); }
+.ss-sec-head small { font-size: 12px; font-weight: 700; color: var(--ink3); }
+.ss-hits-strip { display: flex; gap: 9px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+.ss-hits-strip::-webkit-scrollbar { display: none; }
+.ss-hit-card {
+  flex: none; width: 120px; border-radius: 16px; overflow: hidden; text-align: left;
+  background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+  animation: jjaPop .32s cubic-bezier(.22, 1, .36, 1) both; transition: transform .14s;
+}
+.ss-hit-card:active { transform: scale(.96); }
+.ssh-media { position: relative; height: 118px; background: var(--bg); overflow: hidden; }
+.ssh-media img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.ssh-media em {
+  position: absolute; top: 6px; left: 6px; font-style: normal;
+  padding: 2px 6px; border-radius: 6px; background: var(--ruby); color: #fff; font-size: 10px; font-weight: 800;
+}
+.ssh-info { padding: 7px 9px 9px; }
+.ssh-info b { display: block; font-size: 13px; font-weight: 800; color: var(--p); }
+.ssh-info span { display: block; font-size: 11.2px; color: var(--ink2); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+
+/* Фильтры-пилюли и сортировка */
+.ss-controls-row { margin-bottom: 10px; }
+.ss-tabs-v2 { display: flex; gap: 7px; overflow-x: auto; scrollbar-width: none; padding: 1px 0; }
+.ss-tabs-v2::-webkit-scrollbar { display: none; }
+.ss-tabs-v2 button {
+  flex: none; height: 37px; padding: 0 12px; border-radius: 12px;
+  background: #fff; border: 1.5px solid var(--line); color: var(--ink2);
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.8px; font-weight: 700; transition: all .18s;
+}
+.ss-tabs-v2 button em {
+  font-style: normal; font-size: 10.5px; font-weight: 800;
+  padding: 1.5px 6px; border-radius: 999px; background: var(--bg); color: var(--ink3);
+}
+.ss-tabs-v2 button.on { background: var(--p); border-color: var(--p); color: #fff; box-shadow: 0 5px 14px rgba(174, 51, 255, .26); }
+.ss-tabs-v2 button.on em { background: rgba(255, 255, 255, .22); color: #fff; }
+
+.ss-list-meta {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin: 0 2px 10px; font-size: 12.2px; font-weight: 700; color: var(--ink3);
+}
+.ss-sort-pill {
+  height: 30px; padding: 0 10px; border-radius: 9px;
   background: #fff; border: 1px solid var(--line); color: var(--ink2);
-  display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 5px; font-size: 11.8px; font-weight: 700;
 }
-.ss-tabs button.on { background: var(--p); border-color: var(--p); color: #fff; }
-.ss-count { font-size: 12px; font-weight: 700; color: var(--ink3); margin: 2px 2px 10px; }
+.ss-grid-anim { animation: jjaPop .26s ease; }
+
+/* 9. Чат с продавцом ПОСЛЕ ПОКУПКИ (OrderOk + OrderDetail + SellerChat order badge) */
+.ok-seller-btn {
+  width: 100%; height: 46px; margin-top: 9px; border-radius: 14px;
+  background: var(--p-tint); border: 1.5px solid rgba(174, 51, 255, .28);
+  color: var(--p-deep); font-size: 14px; font-weight: 800;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform .14s;
+}
+.ok-seller-btn:active { transform: scale(.98); background: var(--p-soft); }
+
+.od-sellers-wrap { display: flex; flex-direction: column; gap: 8px; }
+.od-seller-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: #fff; border: 1.5px solid rgba(174, 51, 255, .2);
+  border-radius: 18px; padding: 11px 12px;
+  box-shadow: 0 6px 18px rgba(174, 51, 255, .07);
+}
+.od-sc-l { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-align: left; }
+.od-sc-av {
+  position: relative; width: 40px; height: 40px; border-radius: 13px; flex: none;
+  background: var(--p-soft); color: var(--p); display: grid; place-items: center;
+}
+.od-sc-av i {
+  position: absolute; right: -2px; bottom: -2px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--green); border: 2px solid #fff;
+}
+.od-sc-txt { min-width: 0; }
+.od-sc-txt b { display: block; font-size: 14px; font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.od-sc-txt small { display: block; font-size: 11.2px; color: var(--green); font-weight: 600; margin-top: 1px; }
+.od-sc-chat {
+  flex: none; height: 36px; padding: 0 12px; border-radius: 11px;
+  background: var(--p); color: #fff; font-size: 12.2px; font-weight: 800;
+  display: inline-flex; align-items: center; gap: 5px;
+  box-shadow: 0 4px 12px rgba(174, 51, 255, .28);
+}
+.od-sc-chat:active { transform: scale(.96); }
+.od-line-r { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+.od-item-chat {
+  width: 30px; height: 30px; border-radius: 9px;
+  background: var(--p-soft); color: var(--p); display: grid; place-items: center;
+}
+
+.sc-head-btn { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; text-align: left; }
+.sc-order-pill {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  margin: 8px 12px 0; padding: 8px 11px; border-radius: 12px;
+  background: var(--p-soft); border: 1px solid rgba(174, 51, 255, .22);
+  color: var(--p-deep); font-size: 12.2px; font-weight: 700; text-align: left;
+}
+.sc-order-pill span:nth-child(2) { flex: 1; min-width: 0; }
+.scop-ic { width: 24px; height: 24px; border-radius: 8px; background: var(--p); color: #fff; display: grid; place-items: center; flex: none; }

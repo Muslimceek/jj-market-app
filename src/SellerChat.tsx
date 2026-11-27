@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronLeft, Send, Store, ShieldCheck, CheckCheck, MessageCircle,
-  ExternalLink, ChevronRight, Sparkles,
+  ExternalLink, ChevronRight, Sparkles, Package,
 } from 'lucide-react'
 import { useApp, tx, fmt, sizeAxis, type Product, type SellerMessage } from './store'
 import { TopBar, Empty } from './ui'
@@ -9,8 +9,8 @@ import { TopBar, Empty } from './ui'
 const nowTime = () =>
   new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 
-/** Умный контекстный ответ продавца по реальным данным товара из каталога */
-function buildSellerReply(seller: string, q: string, p: Product | undefined, lang: 'ru' | 'tr' | 'kk'): string {
+/** Умный контекстный ответ продавца по реальным данным товара или оформленного заказа */
+function buildSellerReply(seller: string, q: string, p: Product | undefined, lang: 'ru' | 'tr' | 'kk', orderId?: string): string {
   const low = q.toLowerCase()
   const sAx = p ? sizeAxis(p) : undefined
   const availSizes = p
@@ -23,6 +23,14 @@ function buildSellerReply(seller: string, q: string, p: Product | undefined, lan
   const uniqueSizes = [...new Set(availSizes)]
   const totalStock = p ? (p.variants.reduce((a, v) => a + (v.stock || 0), 0) || p.stock) : 0
   const feats = p ? p.features.map((f) => `${tx(f.name, lang)}: ${tx(f.value, lang)}`).join(' · ') : ''
+
+  if (orderId && /заказ|отправ|упаков|статус|трек|посыл|sipariş|kargo|тапсырыс/i.test(low)) {
+    return `Видим ваш заказ №${orderId}! Уже взяли в сборку в магазине ${seller}: аккуратно проверим товар, надёжно упакуем и передадим в доставку JJ Market. Статус и QR-код выдачи появятся в разделе «Мои заказы».`
+  }
+
+  if (orderId && /спасибо|благодар|рахмет|teşekkür/i.test(low)) {
+    return `Спасибо вам за покупку в ${seller}! Если появятся любые вопросы по заказу №${orderId} или примерке — всегда на связи прямо здесь.`
+  }
 
   if (/размер|size|beden|өлшем|сядет|сидит|посадк|kalıp/i.test(low)) {
     if (uniqueSizes.length > 0) {
@@ -69,8 +77,8 @@ function buildSellerReply(seller: string, q: string, p: Product | undefined, lan
   return `Спасибо за обращение в ${seller}! Чем я могу помочь с выбором?`
 }
 
-/* ---------- ЧАТ С ПРОДАВЦОМ ПО КОНКРЕТНОМУ ТОВАРУ ---------- */
-export function SellerChat({ seller, productId }: { seller: string; productId?: string }) {
+/* ---------- ЧАТ С ПРОДАВЦОМ (ДО ПОКУПКИ И ПОСЛЕ ПОКУПКИ ПО ЗАКАЗУ) ---------- */
+export function SellerChat({ seller, productId, orderId }: { seller: string; productId?: string; orderId?: string }) {
   const { cat, s, set, t, lang, pop, push, money } = useApp()
   const ext = t.ext
   const p = useMemo(() => (productId ? cat.products.find((x) => x.id === productId) : undefined), [cat.products, productId])
@@ -80,13 +88,16 @@ export function SellerChat({ seller, productId }: { seller: string; productId?: 
   const [typing, setTyping] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
 
-  // При первом открытии создаём приветствие продавца
+  // При первом открытии создаём приветствие продавца (с учётом заказа, если чат открыт после покупки)
   useEffect(() => {
     if (existing.length === 0) {
+      const welcomeText = orderId
+        ? `Здравствуйте! Видим ваш оформленный заказ №${orderId} в магазине ${chatKey}. Подскажем по сборке, упаковке и отправке!`
+        : ext.chatGreet(chatKey)
       const welcome: SellerMessage = {
         id: 'welcome-' + Date.now(),
         from: 'seller',
-        text: ext.chatGreet(chatKey),
+        text: welcomeText,
         time: nowTime(),
         productId,
       }
@@ -95,7 +106,7 @@ export function SellerChat({ seller, productId }: { seller: string; productId?: 
         chats: { ...(x.chats || {}), [chatKey]: [welcome] },
       }))
     }
-  }, [chatKey])
+  }, [chatKey, orderId])
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -122,7 +133,7 @@ export function SellerChat({ seller, productId }: { seller: string; productId?: 
       const reply: SellerMessage = {
         id: 's-' + Date.now(),
         from: 'seller',
-        text: buildSellerReply(chatKey, text, p, lang),
+        text: buildSellerReply(chatKey, text, p, lang, orderId),
         time: nowTime(),
       }
       set((x) => ({
@@ -133,20 +144,37 @@ export function SellerChat({ seller, productId }: { seller: string; productId?: 
     }, 850)
   }
 
+  const quickQuestions = orderId
+    ? (lang === 'tr'
+        ? [`Sipariş №${orderId} ne zaman kargolanır?`, 'Özenli paketler misiniz?', 'Teslimat takibi nasıl olacak?', 'Teşekkürler!']
+        : [`Когда отправите заказ №${orderId}?`, 'Упакуйте аккуратно, пожалуйста', 'Как отслеживать посылку?', 'Спасибо за заказ!'])
+    : ext.chatQuickQs
+
   return (
     <div className="screen home-screen sc-screen">
-      {/* Шапка продавца с зелёным статусом онлайн */}
+      {/* Шапка продавца с зелёным статусом онлайн и переходом в витрину */}
       <header className="sc-header">
         <button className="tb-back" onClick={pop} aria-label={t.back}><ChevronLeft size={23} /></button>
-        <span className="sc-av">
-          <Store size={17} />
-          <i className="sc-online-dot" />
-        </span>
-        <div className="sc-head-txt">
-          <b>{chatKey} <ShieldCheck size={14} color="#AE33FF" /></b>
-          <small>{typing ? ext.sellerTyping : ext.sellerOnline}</small>
-        </div>
+        <button type="button" className="sc-head-btn" onClick={() => push('sellerStore', { seller: chatKey })}>
+          <span className="sc-av">
+            <Store size={17} />
+            <i className="sc-online-dot" />
+          </span>
+          <div className="sc-head-txt">
+            <b>{chatKey} <ShieldCheck size={14} color="#AE33FF" /></b>
+            <small>{typing ? ext.sellerTyping : ext.sellerOnline}</small>
+          </div>
+        </button>
       </header>
+
+      {/* Плашка оформленного заказа (если покупатель пишет после покупки) */}
+      {orderId && (
+        <button type="button" className="sc-order-pill" onClick={() => push('order', { id: orderId })}>
+          <span className="scop-ic"><Package size={14} /></span>
+          <span><b>{t.order} №{orderId}</b> · {lang === 'tr' ? 'Siparişiniz aktif' : 'Чат по вашему заказу'}</span>
+          <ChevronRight size={14} />
+        </button>
+      )}
 
       {/* Закреплённая карточка обсуждаемого товара */}
       {p && (
@@ -190,7 +218,7 @@ export function SellerChat({ seller, productId }: { seller: string; productId?: 
 
       {/* Быстрые вопросы в 1 касание */}
       <div className="sc-quick-bar">
-        {ext.chatQuickQs.map((q) => (
+        {quickQuestions.map((q) => (
           <button key={q} className="sc-q-chip" onClick={() => sendText(q)}>
             <Sparkles size={11} />{q}
           </button>

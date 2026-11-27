@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import {
   ChevronRight, Heart, CreditCard, ShoppingCart, Check, PartyPopper, Trash2,
   MapPin, Store, Tag, Sparkles, RotateCcw, ShieldCheck, SlidersHorizontal,
-  ArrowRight, User as UserIc, Loader2, QrCode, Plus, Lock,
+  ArrowRight, User as UserIc, Loader2, QrCode, Plus, Lock, MessageCircleMore,
 } from 'lucide-react'
 import { useApp, tx, sizeAxis } from './store'
 import { Sheet, Stepper, QuickSizeSheet, HScroll, SectionHead, TopBar, CurrencySheet } from './ui'
@@ -587,8 +587,12 @@ export function Checkout({ promo }: { promo?: string | null }) {
 }
 
 export function OrderOk({ id }: { id: string }) {
-  const { t, push, tab } = useApp()
+  const { s, cat, t, push, tab } = useApp()
   const [x] = useState(id)
+  const ord = s.orders.find((o) => o.id === x)
+  const firstProd = ord?.lines[0] ? cat.products.find((p) => p.id === ord.lines[0].productId) : undefined
+  const sellerName = firstProd?.seller || firstProd?.brand || 'JJ Market'
+
   return (
     <div className="screen ok-screen">
       <div className="ok-emblem">
@@ -602,7 +606,15 @@ export function OrderOk({ id }: { id: string }) {
         <QrCode size={17} />
         <span>{t.ext.qrTitle}</span>
       </button>
-      <button className="ghost" onClick={() => tab('home')} style={{ marginTop: 6 }}>{t.continueShop}</button>
+      <button
+        type="button"
+        className="ok-seller-btn"
+        onClick={() => push('sellerChat', { seller: sellerName, productId: firstProd?.id, orderId: x })}
+      >
+        <MessageCircleMore size={17} />
+        <span>{t.ext.writeSeller} · {sellerName}</span>
+      </button>
+      <button className="ghost" onClick={() => tab('home')} style={{ marginTop: 4 }}>{t.continueShop}</button>
     </div>
   )
 }

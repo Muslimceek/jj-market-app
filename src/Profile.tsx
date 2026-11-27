@@ -3,7 +3,7 @@ import {
   Bell, User as UserIc, ChevronLeft, MapPin, Pencil, Trash2, Plus, Package, Star,
   Megaphone, Send, Sparkles, ChevronDown, MessageCircle, Check, LogOut, Phone, Mail,
   ChevronRight, Percent, Heart, Globe, Settings as SettingsIc, FileText, Shield,
-  HelpCircle, LogIn, UserPlus, Truck, Copy, QrCode,
+  HelpCircle, LogIn, UserPlus, Truck, Copy, QrCode, Store, MessageCircleMore,
 } from 'lucide-react'
 import { useApp, tx, type Address, type User } from './store'
 import { TopBar, Row, Empty, Seg, Sheet, LangSheet, Grid } from './ui'
@@ -404,16 +404,70 @@ export function OrderDetail({ id }: { id: string }) {
           </div>
         )}
 
+        {/* Прямой чат с продавцом заказа (доступно сразу после покупки!) */}
+        {(() => {
+          const sellerMap = new Map<string, string>()
+          o.lines.forEach((l) => {
+            const p = cat.products.find((x) => x.id === l.productId)
+            if (p) {
+              const name = p.seller || p.brand || 'JJ Market'
+              if (!sellerMap.has(name)) sellerMap.set(name, p.id)
+            }
+          })
+          const sellers = [...sellerMap.entries()]
+          if (!sellers.length) return null
+          return (
+            <div className="od-sellers-wrap">
+              {sellers.map(([sellerName, prodId]) => (
+                <div className="od-seller-card" key={sellerName}>
+                  <button type="button" className="od-sc-l" onClick={() => push('sellerStore', { seller: sellerName })}>
+                    <span className="od-sc-av">
+                      <Store size={17} />
+                      <i />
+                    </span>
+                    <div className="od-sc-txt">
+                      <b>{sellerName}</b>
+                      <small>{ext.sellerOnline}</small>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="od-sc-chat"
+                    onClick={() => push('sellerChat', { seller: sellerName, productId: prodId, orderId: o.id })}
+                  >
+                    <MessageCircleMore size={15} />
+                    <span>{ext.writeSeller}</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
+
         {/* Товары заказа */}
         <div className="chk-card">
           {o.lines.map((l, i) => {
             const p = cat.products.find((x) => x.id === l.productId)
             if (!p) return null
+            const sName = p.seller || p.brand || 'JJ Market'
             return (
               <div className="od-line" key={i} onClick={() => push('product', { id: p.id })}>
                 <img src={'/' + p.images[0]} loading="lazy" alt="" />
                 <div><b>{money(l.price)}</b><span>{tx(p.name, lang)}</span><small>{l.label}</small></div>
-                <span className="od-q">{l.qty} {t.pcs}</span>
+                <div className="od-line-r">
+                  <span className="od-q">{l.qty} {t.pcs}</span>
+                  <button
+                    type="button"
+                    className="od-item-chat"
+                    aria-label={ext.writeSeller}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      push('sellerChat', { seller: sName, productId: p.id, orderId: o.id })
+                    }}
+                  >
+                    <MessageCircleMore size={14} />
+                  </button>
+                </div>
               </div>
             )
           })}

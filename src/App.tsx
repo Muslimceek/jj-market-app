@@ -25,7 +25,7 @@ function render(r: Route): ReactNode {
     case 'list': return <ProductList kind={p.kind} id={p.id} title={p.title} f0={p.f0} />
     case 'filters': return <Filters f={p.f} onApply={p.onApply} from={p.from} />
     case 'product': return <ProductPage id={p.id} key={p.id} />
-    case 'sellerChat': return <SellerChat seller={p.seller} productId={p.productId} key={p.seller + (p.productId || '')} />
+    case 'sellerChat': return <SellerChat seller={p.seller} productId={p.productId} orderId={p.orderId} key={p.seller + (p.productId || '') + (p.orderId || '')} />
     case 'sellerChats': return <SellerChats />
     case 'sellerStore': return <SellerStore seller={p.seller} key={p.seller} />
     case 'orderOk': return <OrderOk id={p.id} />
