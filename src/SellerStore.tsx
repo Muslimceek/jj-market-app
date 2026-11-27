@@ -153,9 +153,9 @@ export function SellerStore({ seller }: { seller: string }) {
           </div>
         </div>
 
-        {/* 2. Приподнятая белая карточка магазина с метриками и кнопками */}
+        {/* 2. Компактная ювелирная Apple-карточка бренда */}
         <div className="ss-body-pad">
-          <div className="ss-id-card">
+          <div className="ss-id-card compact">
             <div className="ss-id-head">
               <div className="ss-emblem-v2">
                 <span>{initials}</span>
@@ -164,41 +164,25 @@ export function SellerStore({ seller }: { seller: string }) {
               <div className="ss-id-txt">
                 <div className="ss-id-name">
                   <h1>{seller}</h1>
-                  <BadgeCheck size={18} fill="#AE33FF" color="#fff" />
+                  <BadgeCheck size={15} fill="#AE33FF" color="#fff" />
                 </div>
-                <small className="ss-id-status">
-                  <i />{ext.sellerOnline}
-                </small>
+                <div className="ss-meta-inline">
+                  <span className="smi-star"><Star size={11} fill="#F59E0B" color="#F59E0B" /><b>4.9</b></span>
+                  <i>·</i>
+                  <span><Users size={11} /><b key={followers} className="price-morph">{followers.toLocaleString('ru-RU')}</b></span>
+                  <i>·</i>
+                  <span className="smi-live"><Clock size={11} />~5 мин</span>
+                </div>
               </div>
             </div>
 
-            {/* 3 визуальные метрики с красивыми иконками */}
-            <div className="ss-metrics">
-              <div className="ss-m-tile">
-                <span className="ss-m-ic amber"><Star size={14} fill="#F59E0B" color="#F59E0B" /></span>
-                <b>4.9</b>
-                <small>{lang === 'tr' ? 'Puan' : 'Рейтинг'}</small>
-              </div>
-              <div className="ss-m-tile">
-                <span className="ss-m-ic violet"><Users size={14} /></span>
-                <b key={followers} className="price-morph">{followers.toLocaleString('ru-RU')}</b>
-                <small>{ext.storeFollowers}</small>
-              </div>
-              <div className="ss-m-tile">
-                <span className="ss-m-ic green"><Clock size={14} /></span>
-                <b>~5 мин</b>
-                <small>{lang === 'tr' ? 'Yanıt' : 'Ответ в чате'}</small>
-              </div>
-            </div>
-
-            {/* Две удобные 44px кнопки действий */}
             <div className="ss-cta-row">
               <button
                 type="button"
                 className={'ss-btn-follow' + (following ? ' on' : '') + (popFollow ? ' burst' : '')}
                 onClick={toggleFollow}
               >
-                {following ? <UserCheck size={16} /> : <UserPlus size={16} />}
+                {following ? <UserCheck size={14} /> : <UserPlus size={14} />}
                 <span>{following ? ext.storeFollowing : ext.storeFollow}</span>
               </button>
               <button
@@ -206,7 +190,7 @@ export function SellerStore({ seller }: { seller: string }) {
                 className="ss-btn-chat"
                 onClick={() => push('sellerChat', { seller, productId: storeProducts[0]?.id })}
               >
-                <MessageCircleMore size={16} />
+                <MessageCircleMore size={14} />
                 <span>{ext.writeSeller}</span>
               </button>
             </div>
