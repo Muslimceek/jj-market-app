@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useApp, tx, findCat, productsIn, catIds, hexOf, fmt, type Product, type Catalog } from './store'
 import { TopBar, Grid, Sheet, Empty } from './ui'
+import { LensAiIcon } from './VisualSearch'
 import { AddressSheet, addrMeta } from './Home'
 
 /* ---------- КОМПАКТНЫЙ ДВУХПАНЕЛЬНЫЙ КАТАЛОГ (как в Ozon / Trendyol / Kaspi — поиск за 1 секунду) ---------- */
@@ -88,8 +89,8 @@ export function Categories() {
           <div className="jj-search-bar" onClick={() => push('search')} role="button" tabIndex={0}>
             <SearchIc size={17} className="jj-s-ic" />
             <span className="jj-s-ph">{t.search}</span>
-            <button type="button" className="jj-s-ai" onClick={(e) => { e.stopPropagation(); push('ai') }} aria-label={t.ai}>
-              <Sparkles size={14} />
+            <button type="button" className="jj-s-ai lens" onClick={(e) => { e.stopPropagation(); push('ai') }} aria-label="JJ Lens AI">
+              <LensAiIcon size={16} />
             </button>
           </div>
           <button className="jj-filter-btn" onClick={() => push('filters', { from: 'cats' })} aria-label={t.filters}>

@@ -615,3 +615,295 @@
 }
 .sc-order-pill span:nth-child(2) { flex: 1; min-width: 0; }
 .scop-ic { width: 24px; height: 24px; border-radius: 8px; background: var(--p); color: #fff; display: grid; place-items: center; flex: none; }
+
+
+/* ==========================================================================
+   10. JJ LENS AI — УМНЫЙ AI-АГЕНТ ПОИСКА ПО ФОТО И КАМЕРЕ (Apple Camera + Google Lens)
+   ========================================================================== */
+@keyframes lensBeam {
+  0%, 100% { top: 12%; opacity: .35; }
+  50% { top: 82%; opacity: .95; }
+}
+@keyframes lensDotPop {
+  0%, 100% { transform: scale(.75); box-shadow: 0 0 0 0 rgba(174, 51, 255, .65); }
+  50% { transform: scale(1.15); box-shadow: 0 0 0 11px rgba(174, 51, 255, 0); }
+}
+
+.jj-s-ai.lens {
+  position: relative;
+  width: 32px; height: 32px; border-radius: 10px;
+  background: var(--p-soft); color: var(--p);
+  display: grid; place-items: center; flex: none;
+  transition: transform .14s, background .16s;
+}
+.jj-s-ai.lens:active { transform: scale(.9); background: var(--p); color: #fff; }
+
+.lens-screen { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.lens-screen.dark { background: #14101D; color: #fff; }
+
+/* Верхняя панель JJ Lens / AI-Чат */
+.lens-top {
+  flex: none; display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 8px 14px 11px;
+  background: linear-gradient(150deg, #521192 0%, #7B18CE 58%, #9D24F0 100%);
+  color: #fff;
+}
+.lens-top.on-dark {
+  background: linear-gradient(180deg, #521192 0%, rgba(20, 16, 29, 0) 100%);
+  border-bottom: 0; color: #fff;
+}
+.lens-back, .lens-re-btn {
+  width: 34px; height: 34px; border-radius: 11px; flex: none;
+  display: grid; place-items: center; transition: transform .13s;
+}
+.lens-top .lens-back, .lens-top .lens-re-btn {
+  background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .24); color: #fff;
+}
+.lens-back:active, .lens-re-btn:active { transform: scale(.92); }
+
+.lens-mode-pill {
+  display: inline-flex; padding: 3px; border-radius: 12px;
+  background: rgba(255, 255, 255, .15); border: 1px solid rgba(255, 255, 255, .24);
+  backdrop-filter: blur(12px);
+}
+.lens-mode-pill button {
+  height: 29px; padding: 0 11px; border-radius: 9px;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700; color: rgba(255, 255, 255, .82); transition: all .2s;
+}
+.lens-mode-pill button.on { background: #fff; color: #6B14B8; box-shadow: 0 3px 10px rgba(0, 0, 0, .18); }
+
+/* Видоискатель камеры */
+.lens-cam-stage { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.lens-vf-wrap {
+  position: relative; flex: 1; min-height: 0; margin: 4px 14px 10px;
+  border-radius: 26px; overflow: hidden;
+  background: radial-gradient(circle at 50% 35%, #2C174A 0%, #161120 75%);
+  border: 1px solid rgba(255, 255, 255, .14);
+}
+.lens-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lens-vf-ambient {
+  position: relative; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center; padding: 28px; text-align: center;
+}
+.lens-orb { position: absolute; border-radius: 50%; filter: blur(40px); pointer-events: none; }
+.lens-orb.a { width: 170px; height: 170px; top: -30px; right: -30px; background: rgba(174, 51, 255, .32); }
+.lens-orb.b { width: 150px; height: 150px; bottom: -20px; left: -30px; background: rgba(198, 118, 255, .22); }
+
+.lens-vf-hint { position: relative; z-index: 2; max-width: 264px; }
+.lvh-ic {
+  width: 58px; height: 58px; border-radius: 19px; margin: 0 auto 14px;
+  background: rgba(174, 51, 255, .22); border: 1px solid rgba(216, 150, 255, .42);
+  color: #E7BDFF; display: grid; place-items: center;
+  box-shadow: 0 10px 28px rgba(174, 51, 255, .3);
+}
+.lens-vf-hint b { display: block; font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -.3px; margin-bottom: 7px; }
+.lens-vf-hint p { margin: 0; font-size: 12.6px; line-height: 1.46; color: rgba(255, 255, 255, .74); }
+.lvh-note { display: block; margin-top: 10px; font-size: 11px; color: #E7BDFF; font-weight: 600; }
+
+/* Угловые рамки видоискателя + мягкий луч */
+.lens-frame { position: absolute; inset: 22px; pointer-events: none; z-index: 3; }
+.lens-frame i.c {
+  position: absolute; width: 24px; height: 24px; border-color: rgba(220, 165, 255, .85); border-style: solid; border-width: 0;
+}
+.lens-frame i.tl { top: 0; left: 0; border-top-width: 2.5px; border-left-width: 2.5px; border-top-left-radius: 10px; }
+.lens-frame i.tr { top: 0; right: 0; border-top-width: 2.5px; border-right-width: 2.5px; border-top-right-radius: 10px; }
+.lens-frame i.bl { bottom: 0; left: 0; border-bottom-width: 2.5px; border-left-width: 2.5px; border-bottom-left-radius: 10px; }
+.lens-frame i.br { bottom: 0; right: 0; border-bottom-width: 2.5px; border-right-width: 2.5px; border-bottom-right-radius: 10px; }
+.lens-idle-beam {
+  position: absolute; left: 6px; right: 6px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #AE33FF, #E7BDFF, #AE33FF, transparent);
+  box-shadow: 0 0 12px rgba(174, 51, 255, .8);
+  animation: lensBeam 3.2s ease-in-out infinite;
+}
+
+/* Нижний док камеры: 4 быстрых примера + затвор */
+.lens-dock {
+  flex: none; padding: 6px 14px 20px;
+  background: rgba(255, 255, 255, .04); border-top: 1px solid rgba(255, 255, 255, .08);
+}
+.lens-samples-lbl {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  font-size: 11.2px; font-weight: 700; color: rgba(255, 255, 255, .74); margin-bottom: 8px;
+}
+.lens-samples {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px;
+  margin-bottom: 14px;
+}
+.lens-sample-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 5px; border-radius: 13px;
+  background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .14);
+  transition: transform .13s, border-color .16s;
+}
+.lens-sample-item:active { transform: scale(.94); border-color: #AE33FF; }
+.lens-sample-item img { width: 100%; height: 54px; border-radius: 9px; object-fit: cover; object-position: top; }
+.lens-sample-item span { font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, .88); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+.lens-shutter-bar { display: flex; align-items: center; justify-content: space-around; gap: 12px; }
+.lens-sec-act {
+  width: 72px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  color: rgba(255, 255, 255, .88); font-size: 11px; font-weight: 700;
+}
+.lens-sec-act:active { transform: scale(.93); }
+.lens-shutter {
+  width: 66px; height: 66px; border-radius: 50%; padding: 4px;
+  border: 2.5px solid rgba(255, 255, 255, .9); background: transparent;
+  display: grid; place-items: center; transition: transform .13s;
+}
+.lens-shutter:active { transform: scale(.92); }
+.ls-inner {
+  width: 100%; height: 100%; border-radius: 50%;
+  background: linear-gradient(140deg, #C762FF, #AE33FF);
+  color: #fff; display: grid; place-items: center;
+  box-shadow: 0 6px 20px rgba(174, 51, 255, .55);
+}
+
+/* Экран активного моушн-сканирования */
+.lens-scan-view {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px 24px; gap: 22px;
+}
+.lens-scan-card {
+  position: relative; width: 224px; height: 270px; border-radius: 24px; overflow: hidden;
+  border: 2px solid rgba(174, 51, 255, .75);
+  box-shadow: 0 20px 50px rgba(174, 51, 255, .36);
+  background: #231934;
+}
+.lens-scan-card img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.lsc-placeholder { width: 100%; height: 100%; display: grid; place-items: center; color: #D896FF; }
+.lens-scan-laser {
+  position: absolute; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, #AE33FF, #fff, #AE33FF, transparent);
+  box-shadow: 0 0 18px 4px rgba(174, 51, 255, .75);
+  animation: lensBeam 1.15s ease-in-out infinite;
+}
+.lens-ai-dot {
+  position: absolute; width: 12px; height: 12px; border-radius: 50%;
+  background: #fff; border: 2.5px solid #AE33FF;
+  animation: lensDotPop 1.2s ease-in-out infinite;
+}
+.lens-ai-dot.d1 { top: 34%; left: 32%; }
+.lens-ai-dot.d2 { top: 52%; right: 28%; animation-delay: .25s; }
+.lens-ai-dot.d3 { bottom: 26%; left: 46%; animation-delay: .5s; }
+
+.lens-scan-status { text-align: center; width: 100%; max-width: 280px; }
+.lss-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: 999px; margin-bottom: 9px;
+  background: rgba(174, 51, 255, .24); border: 1px solid rgba(216, 150, 255, .38);
+  font-size: 11.5px; font-weight: 800; color: #E7BDFF;
+}
+.lens-scan-status h2 { margin: 0 0 12px; font-size: 16.5px; font-weight: 800; color: #fff; }
+.lss-bars { display: flex; gap: 6px; }
+.lss-bars i { flex: 1; height: 3.5px; border-radius: 2px; background: rgba(255, 255, 255, .18); transition: background .3s; }
+.lss-bars i.on { background: #AE33FF; }
+
+/* Экран результатов JJ Vision AI */
+.lens-res-scroll { padding-top: 10px; }
+.lr-source-card {
+  display: flex; align-items: center; gap: 11px;
+  background: #fff; border: 1px solid var(--line); border-radius: 18px;
+  padding: 10px 11px; box-shadow: var(--shadow-sm); margin-bottom: 10px;
+  animation: jjaPop .28s ease;
+}
+.lrs-thumb { position: relative; width: 52px; height: 56px; border-radius: 12px; overflow: hidden; flex: none; background: var(--bg); }
+.lrs-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.lrs-ok {
+  position: absolute; right: 3px; bottom: 3px; width: 16px; height: 16px; border-radius: 50%;
+  background: #16A34A; color: #fff; display: grid; place-items: center; border: 1.5px solid #fff;
+}
+.lrs-info { flex: 1; min-width: 0; }
+.lrs-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 800; color: var(--p); }
+.lrs-info b { display: block; font-size: 14.5px; font-weight: 800; color: var(--ink); margin: 1px 0 3px; }
+.lrs-color-row { display: flex; align-items: center; gap: 5px; font-size: 11.8px; font-weight: 600; color: var(--ink2); }
+.lrs-color-row i { width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .18); flex: none; }
+.lrs-color-row em { font-style: normal; color: var(--ink3); }
+.lrs-new {
+  width: 36px; height: 36px; border-radius: 11px; flex: none;
+  background: var(--p-soft); color: var(--p); display: grid; place-items: center;
+}
+
+.lr-modes { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 9px; padding: 1px 0; }
+.lr-modes::-webkit-scrollbar { display: none; }
+.lr-modes button {
+  flex: none; height: 33px; padding: 0 11px; border-radius: 10px;
+  background: #fff; border: 1px solid var(--line); color: var(--ink2);
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700; transition: all .18s;
+}
+.lr-modes button.on { background: var(--p); border-color: var(--p); color: #fff; box-shadow: 0 4px 12px rgba(174, 51, 255, .24); }
+
+.lr-colors-bar { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 10px; }
+.lr-colors-bar::-webkit-scrollbar { display: none; }
+.lrc-sw {
+  flex: none; height: 30px; padding: 0 10px 0 7px; border-radius: 999px;
+  background: #fff; border: 1.5px solid var(--line);
+  display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: var(--ink2);
+}
+.lrc-sw i { width: 13px; height: 13px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .16); }
+.lrc-sw.on { border-color: var(--p); background: var(--p-tint); color: var(--p-deep); }
+
+.lr-ai-bubble {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 11px; border-radius: 13px; margin-bottom: 10px;
+  background: var(--p-tint); border: 1px solid rgba(174, 51, 255, .2);
+  font-size: 12.2px; font-weight: 600; color: var(--p-deep); line-height: 1.38;
+  animation: jjaPop .22s ease;
+}
+.lr-ai-bubble span { flex: 1; }
+
+.lr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.lr-card {
+  background: #fff; border-radius: 16px; overflow: hidden;
+  border: 1px solid var(--line); box-shadow: var(--shadow-sm); cursor: pointer;
+  animation: jjaPop .28s cubic-bezier(.22, 1, .36, 1) both;
+}
+.lrc-media { position: relative; aspect-ratio: 4 / 4.4; background: var(--bg); overflow: hidden; }
+.lrc-media img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.lrc-match {
+  position: absolute; top: 7px; left: 7px;
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 7px; border-radius: 8px;
+  background: rgba(34, 34, 38, .76); backdrop-filter: blur(8px);
+  color: #fff; font-size: 10.5px; font-weight: 800;
+}
+.lrc-match.top { background: var(--p); box-shadow: 0 4px 10px rgba(174, 51, 255, .36); }
+.lrc-disc {
+  position: absolute; top: 7px; right: 7px; font-style: normal;
+  padding: 2.5px 6px; border-radius: 7px; background: var(--ruby); color: #fff; font-size: 10px; font-weight: 800;
+}
+.lrc-body { padding: 8px 9px 10px; }
+.lrc-price { display: flex; align-items: baseline; gap: 5px; }
+.lrc-price b { font-size: 14px; font-weight: 800; color: var(--p); }
+.lrc-price s { font-size: 10.5px; color: var(--ink3); }
+.lrc-name {
+  margin: 3px 0 6px; font-size: 12px; font-weight: 600; color: var(--ink); line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.lrc-foot { display: flex; align-items: center; justify-content: space-between; }
+.lrc-foot span { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 700; color: var(--ink2); }
+.lrc-bag {
+  width: 28px; height: 28px; border-radius: 9px;
+  background: var(--p-soft); color: var(--p); display: grid; place-items: center;
+}
+.lrc-bag:active { background: var(--p); color: #fff; }
+
+.lr-agent-bar {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px 22px; background: #fff; border-top: 1px solid var(--line);
+}
+.lr-agent-bar input {
+  flex: 1; min-width: 0; height: 40px; border-radius: 20px;
+  background: var(--bg); border: 1px solid var(--line); padding: 0 13px; font-size: 13.5px;
+}
+.lr-agent-bar input:focus { border-color: var(--p); background: #fff; }
+.lr-send {
+  width: 38px; height: 38px; border-radius: 50%; flex: none;
+  background: var(--p-dis); color: #fff; display: grid; place-items: center;
+}
+.lr-send.on { background: var(--p); box-shadow: var(--shadow-p); }
+.chat-cam-btn {
+  width: 40px; height: 40px; border-radius: 12px; flex: none;
+  background: var(--p-soft); color: var(--p); display: grid; place-items: center;
+}

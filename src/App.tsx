@@ -8,8 +8,9 @@ import { Favorites } from './Favorites'
 import { ProductPage } from './ProductPage'
 import { SellerChat, SellerChats } from './SellerChat'
 import { SellerStore } from './SellerStore'
+import { VisualSearch } from './VisualSearch'
 import { Cart, Checkout, OrderOk } from './Cart'
-import { Profile, EditProfile, Addresses, AddressForm, Orders, OrderDetail, Reviews, Campaigns, News, Assistant, Country, Support, Settings, Doc } from './Profile'
+import { Profile, EditProfile, Addresses, AddressForm, Orders, OrderDetail, Reviews, Campaigns, News, Country, Support, Settings, Doc } from './Profile'
 
 function render(r: Route): ReactNode {
   const p = r.p ?? {}
@@ -37,7 +38,7 @@ function render(r: Route): ReactNode {
     case 'reviews': return <Reviews />
     case 'campaigns': return <Campaigns />
     case 'news': return <News />
-    case 'ai': return <Assistant />
+    case 'ai': return <VisualSearch />
     case 'country': return <Country />
     case 'support': return <Support />
     case 'settings': return <Settings />
@@ -166,7 +167,7 @@ export default function App() {
   ]
 
   const isAuthStage = !splash && !!cat && (!s.onboarded || (!s.user && !s.authSeen) || showLogin)
-  const isPurpleBar = isAuthStage || top?.name === 'sellerStore'
+  const isPurpleBar = isAuthStage || top?.name === 'sellerStore' || top?.name === 'ai'
 
   let body: ReactNode
   if (splash || !cat) body = <Splash />

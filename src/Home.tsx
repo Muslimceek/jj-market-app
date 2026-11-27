@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useApp, tx, code, productsIn, type Address, type Product } from './store'
 import { Grid, HScroll, SectionHead, Sheet, LangSheet, CurrencySheet, Empty, Seg, SkeletonGrid } from './ui'
+import { LensAiIcon } from './VisualSearch'
 import { emptyF } from './Catalog'
 import { COUNTRIES, PICKUP_POINTS, countryByCode, findCountryByName, type CountryInfo } from './geo'
 import { LANGS } from './i18n'
@@ -780,12 +781,12 @@ export function Home() {
             <span className="jj-s-ph" key={hintIdx}>{ui.searchHints[hintIdx]}</span>
             <button
               type="button"
-              className="jj-s-ai"
+              className="jj-s-ai lens"
               onClick={(e) => { e.stopPropagation(); push('ai') }}
-              aria-label={t.ai}
-              title={t.ai}
+              aria-label="JJ Lens AI"
+              title="JJ Lens AI · Поиск по фото"
             >
-              <Sparkles size={15} />
+              <LensAiIcon size={17} />
             </button>
           </div>
           <button className="jj-filter-btn" onClick={() => push('filters', { from: 'home' })} aria-label={t.filters}>
@@ -1039,6 +1040,15 @@ export function SearchScreen() {
             onKeyDown={(e) => e.key === 'Enter' && q.trim() && remember(q)}
           />
           {q && <button onClick={() => setQ('')} aria-label="Clear"><X size={17} /></button>}
+          <button
+            type="button"
+            className="jj-s-ai lens"
+            onClick={() => push('ai')}
+            aria-label="JJ Lens AI"
+            title="JJ Lens AI · Поиск по фото"
+          >
+            <LensAiIcon size={17} />
+          </button>
         </div>
       </div>
 
