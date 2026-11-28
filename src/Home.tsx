@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronDown, Bell, SlidersHorizontal, Search as SearchIc, X, MapPin, Plus, Check,
   ChevronLeft, Globe, Sparkles, Flame, Percent, Store, Home as HomeIc, Briefcase,
-  Navigation, Trash2, Pencil, ArrowRight, Zap, LayoutGrid, Clock, Star, ShoppingBag, CircleCheck,
+  Navigation, Trash2, Pencil, ArrowRight, ArrowUpRight, Zap, LayoutGrid, Clock, Star, ShoppingBag, CircleCheck,
 } from 'lucide-react'
 import { useApp, tx, code, productsIn, type Address, type Product } from './store'
 import { Grid, HScroll, SectionHead, Sheet, LangSheet, CurrencySheet, Empty, Seg, SkeletonGrid } from './ui'
@@ -411,10 +411,13 @@ export const addrMeta = (s: ReturnType<typeof useApp>['s']) => {
   return { title: `${co.flag} ${a.title}`, short: `${a.city}, ${a.street}`, isPickup: a.kind === 'pickup', full: `${a.country}, ${a.city}, ${a.street}` }
 }
 
+const JJ_GUIDE_URL = 'https://yoldosh-istanbul.vercel.app'
+
 /* ---------- Полноэкранный просмотрщик историй (благородные матовые тона без WB-градиента) ---------- */
 interface StoryItem {
   id: string; label: string; title: string; subtitle: string; bg: string; thumb: string
   products: Product[]; onAction: () => void; cta: string
+  badge?: string
 }
 
 function StoryViewer({ stories, startIdx, onSeen }: { stories: StoryItem[]; startIdx: number; onSeen: (id: string) => void }) {
@@ -556,24 +559,19 @@ export function Home() {
       }))
   }, [cat.filters.brands, P])
 
-  // Истории с благородными тёмными матовыми фонами (без WB-градиента)
+  // Истории: объединённый двойной рекламный «JJ Гид» (прямая ссылка на yoldosh-istanbul.vercel.app) + коллекции
   const stories: StoryItem[] = useMemo(() => {
     const shoesCat = activeCats.find((c) => /shoe|footwear/i.test(c.slug))
     const bagsCat = activeCats.find((c) => /accessories/i.test(c.slug))
     const beautyCat = activeCats.find((c) => /beauty/i.test(c.slug))
     const womenCat = activeCats.find((c) => c.slug === 'women')
+    const vividNew = newProds.find((p) => p.images.length > 1 && p.pct > 0) || newProds[1] || newProds[0] || P[1]
     return [
       {
-        id: 'sale', label: ui.storySale, title: ui.salePromoTitle, subtitle: ui.salePromoSub,
-        bg: '#1c1229',
-        thumb: saleProds[0]?.images[0] || P[0]?.images[0] || '',
-        products: saleProds.slice(0, 3), cta: ui.salePromoBtn,
-        onAction: () => push('list', { kind: 'sale', title: t.discount }),
-      },
-      {
-        id: 'new', label: ui.storyNew, title: ui.newPromoTitle, subtitle: ui.newPromoSub,
+        id: 'new', badge: 'NEW',
+        label: ui.storyNew, title: ui.newPromoTitle, subtitle: ui.newPromoSub,
         bg: '#151320',
-        thumb: newProds[0]?.images[0] || P[1]?.images[0] || '',
+        thumb: vividNew?.images[0] || P[1]?.images[0] || '',
         products: newProds.slice(0, 3), cta: ui.newPromoBtn,
         onAction: () => push('list', { kind: 'new', title: t.newest }),
       },
@@ -605,6 +603,14 @@ export function Home() {
         products: productsIn(cat, beautyCat).slice(0, 3), cta: ui.storyCta,
         onAction: () => push('subcats', { id: beautyCat.id }),
       }] : []),
+      {
+        id: 'sale', badge: '%',
+        label: ui.storySale, title: ui.salePromoTitle, subtitle: ui.salePromoSub,
+        bg: '#1c1229',
+        thumb: saleProds[0]?.images[0] || P[0]?.images[0] || '',
+        products: saleProds.slice(0, 3), cta: ui.salePromoBtn,
+        onAction: () => push('list', { kind: 'sale', title: t.discount }),
+      },
       ...(womenCat ? [{
         id: 'women', label: ui.storyBrands, title: tx(womenCat.name, lang), subtitle: t.ext.catalogSub,
         bg: '#191426',
@@ -800,17 +806,49 @@ export function Home() {
         ref={scrollRef}
         onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 12)}
       >
-        {/* 1. Истории */}
+        {/* 1. Истории: широкий рекламный блок «JJ Гид» (2 слота в одном → yoldosh-istanbul.vercel.app) + коллекции */}
         <div className="stories-strip">
+          <a
+            href={JJ_GUIDE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="story-item is-guide-wide"
+          >
+            <span className="story-ring wide">
+              <span className="story-inner guide-wide-cover">
+                <span className="gwc-orb a" />
+                <span className="gwc-orb b" />
+                <span className="gwc-shine" />
+                <span className="gwc-logo">
+                  <img src="/brand/JJ_symbol_white.svg" alt="JJ" />
+                </span>
+                <span className="gwc-copy">
+                  <span className="gwc-kicker">
+                    <Sparkles size={8.5} />
+                    {lang === 'tr' ? 'İSTANBUL' : lang === 'kk' ? 'ЫСТАМБҰЛ' : 'СТАМБУЛ'}
+                  </span>
+                  <b>{lang === 'tr' ? 'JJ Rehber' : 'JJ Гид'}</b>
+                  <small>{lang === 'tr' ? 'Şehir ve alışveriş' : lang === 'kk' ? 'Шопинг пен орын' : 'Шопинг и места'}</small>
+                </span>
+              </span>
+              <em className="story-badge wide-go"><ArrowUpRight size={11} strokeWidth={2.8} /></em>
+            </span>
+            <span className="story-lbl">{lang === 'tr' ? 'JJ Rehber · İstanbul' : lang === 'kk' ? 'JJ Гид · Ыстамбұл' : 'JJ Гид · Стамбул'}</span>
+          </a>
+
           {stories.map((st, i) => {
             const seen = seenStories.includes(st.id)
             return (
-              <button key={st.id} className={'story-item' + (seen ? ' seen' : '')} onClick={() => openStory(i)}>
+              <button
+                key={st.id}
+                className={'story-item' + (seen ? ' seen' : '')}
+                onClick={() => openStory(i)}
+              >
                 <span className="story-ring">
                   <span className="story-inner">
                     {st.thumb ? <img src={'/' + st.thumb} alt="" /> : <Sparkles size={20} color="#6d28d9" />}
                   </span>
-                  {st.id === 'sale' && <em className="story-badge">%</em>}
+                  {st.badge && <em className={'story-badge' + (st.badge === 'NEW' ? ' new-b' : '')}>{st.badge}</em>}
                 </span>
                 <span className="story-lbl">{st.label}</span>
               </button>

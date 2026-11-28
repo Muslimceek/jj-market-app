@@ -8,9 +8,9 @@ export const LANGS: { code: Lang; short: string; label: string }[] = [
 const tr = {
   // онбординг
   onb: [
-    { t: 'Her ihtiyaca uygun geniş ürün yelpazesi', s: 'Kataloğu keşfet, en iyisini bul ve birkaç tıkla sipariş ver' },
-    { t: 'Teslimatın her aşamasını takip et', s: 'Sipariş detayları profilinde, siparişten teslimata kadar' },
-    { t: 'Sorularınız mı var? Destek size yardımcı olacak', s: 'Aradığınızı bulamadınız mı? Destekte tüm cevaplar mevcut' },
+    { t: 'Türkiye’den orijinal stil. Tek dokunuşta.', s: 'Binlerce doğrulanmış marka, gerçek fotoğraflar ve adil fiyatlar — aracı olmadan' },
+    { t: '4 ülkeye şeffaf teslimat ve QR takip', s: 'Siparişinizi her adımda izleyin, JJ teslimat noktasından saniyeler içinde alın' },
+    { t: 'Fotoğrafla AI arama ve satıcıyla sohbet', s: 'Beğendiğiniz ürünü fotoğrafla 2 saniyede bulun, bedeni doğrudan mağazaya sorun' },
   ],
   next: 'İleri', start: 'Başla', skip: 'Atla',
   // вход
@@ -61,6 +61,8 @@ const tr = {
     feedPop: 'Popüler',
     feedNew: 'Yeniler',
     loadMore: 'Daha fazla göster',
+    storyGuide: 'JJ Rehber',
+    storyAi: 'AI Arama',
     storySale: 'Fırsatlar',
     storyNew: 'Yeniler',
     storyHit: 'Trendler',
@@ -265,9 +267,9 @@ export type Dict = typeof tr
 
 const ru: Dict = {
   onb: [
-    { t: 'Широкий выбор товаров на любой случай', s: 'Изучайте каталог, находите лучшее и оформляйте заказ в пару касаний' },
-    { t: 'Следите за каждым этапом доставки', s: 'Детали заказа в профиле — от оформления до получения' },
-    { t: 'Есть вопросы? Поддержка поможет', s: 'Не нашли нужное? В поддержке есть ответы на всё' },
+    { t: 'Стиль из Турции. В один клик.', s: 'Оригинальные бренды, живые фото и честные цены — без лишних переплат' },
+    { t: 'Доставка в 4 страны — всё под контролем', s: 'Отслеживайте каждый шаг пути и забирайте заказы по QR в пунктах выдачи JJ' },
+    { t: 'Поиск по фото AI и прямой чат с магазином', s: 'Находите любую вещь за 2 секунды и уточняйте размер напрямую у продавца' },
   ],
   next: 'Далее', start: 'Начать', skip: 'Пропустить',
   login: 'Вход', loginSubPhone: 'Введите номер телефона и пароль. SMS-код нужен только при регистрации и сбросе пароля.',
@@ -316,6 +318,8 @@ const ru: Dict = {
     feedPop: 'Хиты',
     feedNew: 'Новинки',
     loadMore: 'Показать ещё товары',
+    storyGuide: 'JJ Гид',
+    storyAi: 'AI Поиск',
     storySale: 'Скидки',
     storyNew: 'Новинки',
     storyHit: 'Хиты',
@@ -512,9 +516,9 @@ const ru: Dict = {
 const kk: Dict = {
   ...ru,
   onb: [
-    { t: 'Кез келген қажеттілікке арналған кең таңдау', s: 'Каталогты зерттеп, ең жақсысын тауып, бірнеше түртумен тапсырыс беріңіз' },
-    { t: 'Жеткізудің әр кезеңін бақылаңыз', s: 'Тапсырыс мәліметтері профильде — рәсімдеуден алуға дейін' },
-    { t: 'Сұрақтарыңыз бар ма? Қолдау көмектеседі', s: 'Іздегеніңізді таппадыңыз ба? Қолдауда барлық жауап бар' },
+    { t: 'Түркиядан түпнұсқа стиль. Бір түртуде.', s: 'Тексерілген брендтер, шынайы фото және әділ баға — делдалсыз' },
+    { t: '4 елге жеткізу — бәрі бақылауда', s: 'Тапсырыстың әр қадамын қадағалап, JJ пунктінен QR арқылы тез алыңыз' },
+    { t: 'Фотомен AI іздеу және сатушымен чат', s: 'Ұнаған киімді 2 секундта тауып, өлшемін дүкеннен тікелей сұраңыз' },
   ],
   next: 'Әрі қарай', start: 'Бастау', skip: 'Өткізу',
   login: 'Кіру', loginSubPhone: 'Телефон нөмірі мен құпиясөзді енгізіңіз. SMS-код тек тіркелу мен құпиясөзді қалпына келтіруде қажет.',
@@ -554,6 +558,8 @@ const kk: Dict = {
     feedPop: 'Хиттер',
     feedNew: 'Жаңа',
     loadMore: 'Тағы көрсету',
+    storyGuide: 'JJ Гид',
+    storyAi: 'AI Іздеу',
     storySale: 'Жеңілдік',
     storyNew: 'Жаңа',
     storyHit: 'Хиттер',

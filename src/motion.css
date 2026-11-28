@@ -907,3 +907,85 @@
   width: 40px; height: 40px; border-radius: 12px; flex: none;
   background: var(--p-soft); color: var(--p); display: grid; place-items: center;
 }
+
+/* ==========================================================================
+   11. ШИРОКИЙ РЕКЛАМНЫЙ БЛОК «JJ ГИД» (2 СЛОТА В ОДНОМ → yoldosh-istanbul.vercel.app)
+   ========================================================================== */
+.story-item.is-guide-wide {
+  width: 156px;
+  text-decoration: none;
+  color: inherit;
+}
+.story-item.is-guide-wide .story-lbl {
+  color: var(--p-deep);
+  font-weight: 800;
+  font-size: 11.2px;
+}
+.story-ring.wide {
+  width: 154px;
+  height: 64px;
+  border-radius: 21px;
+  padding: 2.5px;
+  background: linear-gradient(135deg, #AE33FF 0%, #DB8BFF 48%, #6B14B8 100%);
+  box-shadow: 0 6px 18px rgba(174, 51, 255, .32);
+}
+.story-inner.guide-wide-cover {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 18.5px;
+  background: linear-gradient(135deg, #4E0F8C 0%, #861CE4 52%, #AE33FF 100%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px 0 8px;
+  overflow: hidden;
+  text-align: left;
+}
+.gwc-orb {
+  position: absolute; border-radius: 50%; filter: blur(14px); pointer-events: none;
+}
+.gwc-orb.a { width: 58px; height: 58px; top: -22px; right: -10px; background: rgba(255, 255, 255, .3); }
+.gwc-orb.b { width: 46px; height: 46px; bottom: -22px; left: 20px; background: rgba(226, 160, 255, .28); }
+.gwc-shine {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(110deg, transparent 32%, rgba(255, 255, 255, .24) 50%, transparent 68%);
+  transform: translateX(-120%);
+  animation: gwcSweep 3.8s ease-in-out infinite;
+}
+@keyframes gwcSweep {
+  0%, 55% { transform: translateX(-120%); }
+  100% { transform: translateX(140%); }
+}
+.gwc-logo {
+  position: relative; z-index: 1; flex: none;
+  width: 34px; height: 34px; border-radius: 11px;
+  background: rgba(255, 255, 255, .18);
+  border: 1px solid rgba(255, 255, 255, .3);
+  backdrop-filter: blur(8px);
+  display: grid; place-items: center;
+}
+.gwc-logo img { width: 19px; height: 19px; object-fit: contain; }
+.gwc-copy {
+  position: relative; z-index: 1; flex: 1; min-width: 0;
+  display: flex; flex-direction: column; justify-content: center; line-height: 1.12;
+}
+.gwc-kicker {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 8.2px; font-weight: 800; letter-spacing: .55px;
+  color: #F4DBFF; margin-bottom: 1.5px;
+}
+.gwc-copy b {
+  font-size: 13.2px; font-weight: 800; color: #fff; letter-spacing: -.25px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gwc-copy small {
+  font-size: 9.4px; font-weight: 600; color: rgba(255, 255, 255, .86);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;
+}
+.story-badge.wide-go {
+  background: #24103B; color: #fff;
+  width: 20px; height: 20px; border-radius: 7px;
+  box-shadow: 0 3px 8px rgba(36, 16, 59, .32);
+}
+.story-badge.new-b { background: var(--dark); width: auto; padding: 0 4.5px; font-size: 8.2px; letter-spacing: .2px; }
